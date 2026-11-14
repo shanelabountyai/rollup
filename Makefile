@@ -4,7 +4,7 @@ export ROLLUP_RAW_DIR := $(abspath $(RAW))
 export ROLLUP_DUCKDB_PATH := $(abspath data/rollup.duckdb)
 DBT = cd warehouse && dbt
 
-.PHONY: install generate build dbt-build docs test test-mutation lint typecheck ci clean
+.PHONY: install generate build dbt-build docs test test-warehouse test-mutation lint typecheck query queries ci clean
 
 install:
 	pip install -e '.[dev]'
@@ -23,6 +23,15 @@ docs:
 test:
 	pytest
 
+test-warehouse:
+	pytest -m warehouse
+
+query:
+	python -m rollup.query "$(Q)"
+
+queries:
+	python -m rollup.query --all
+
 test-mutation:
 	pytest -m mutation -v
 
@@ -33,7 +42,7 @@ lint:
 typecheck:
 	mypy
 
-ci: lint typecheck test build docs test-mutation
+ci: lint typecheck test build test-warehouse docs test-mutation
 
 clean:
 	rm -rf data warehouse/target warehouse/logs

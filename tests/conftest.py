@@ -26,3 +26,12 @@ def tables() -> dict[str, pd.DataFrame]:
 @pytest.fixture(scope="session")
 def repo_root() -> Path:
     return Path(__file__).resolve().parents[1]
+
+
+@pytest.fixture(scope="session")
+def warehouse_db(repo_root: Path) -> Path:
+    """The built warehouse. Warehouse tests fail (never skip) when it is missing: run `make build` first."""
+    path = Path(os.environ.get("ROLLUP_DUCKDB_PATH", repo_root / "data" / "rollup.duckdb"))
+    if not path.exists():
+        pytest.fail(f"{path} not found: run `make build` before `make test-warehouse`")
+    return path
