@@ -1,0 +1,160 @@
+version: 2
+
+models:
+  - name: stg_campaigns
+    description: Campaign catalogue, typed. One row per campaign_id with its current name.
+    columns:
+      - name: campaign_id
+        data_tests: [unique, not_null]
+      - name: platform
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: [google_ads, linkedin_ads, meta_ads]}
+      - name: campaign_name
+        data_tests: [not_null]
+      - name: utm_campaign_key
+        data_tests: [unique, not_null]
+      - name: channel_key
+        data_tests:
+          - accepted_values:
+              arguments: {values: [paid_search, paid_social]}
+      - name: start_date
+        data_tests: [not_null]
+
+  - name: stg_ad_spend
+    description: Daily spend per campaign, typed. campaign_name is the name in force that day.
+    columns:
+      - name: spend_id
+        data_tests: [unique, not_null]
+      - name: campaign_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_campaigns'), field: campaign_id}
+      - name: spend_date
+        data_tests: [not_null]
+      - name: spend_usd
+        data_tests: [not_null]
+      - name: platform
+        data_tests:
+          - accepted_values:
+              arguments: {values: [google_ads, linkedin_ads, meta_ads]}
+
+  - name: stg_web_sessions
+    description: Web sessions with UTMs normalised (trimmed, lower-cased; D1). Timestamps UTC.
+    columns:
+      - name: session_id
+        data_tests: [unique, not_null]
+      - name: anonymous_id
+        data_tests: [not_null]
+      - name: session_start_at
+        data_tests: [not_null]
+      - name: session_date
+        description: Reporting date, the America/New_York day of session_start_at (D-15).
+        data_tests:
+          - not_null
+          - local_date_of:
+              arguments: {timestamp_column: session_start_at}
+      - name: utm_medium
+        data_tests:
+          - accepted_values:
+              arguments: {values: [cpc, paid_social, email]}
+      - name: utm_source
+        data_tests:
+          - accepted_values:
+              arguments: {values: [google, linkedin, facebook, hubspot]}
+
+  - name: stg_form_fills
+    description: Form fills with submitted_at converted from America/New_York to UTC (D3).
+    columns:
+      - name: form_fill_id
+        data_tests: [unique, not_null]
+      - name: session_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_web_sessions'), field: session_id}
+      - name: email
+        data_tests: [unique, not_null]
+      - name: person_key
+        data_tests: [unique, not_null]
+      - name: submitted_at
+        data_tests: [not_null]
+      - name: submitted_date
+        description: Reporting date, the America/New_York day of the fill (D-15).
+        data_tests:
+          - not_null
+          - local_date_of:
+              arguments: {timestamp_column: submitted_at}
+      - name: form_name
+        data_tests:
+          - accepted_values:
+              arguments: {values: [contact_us, demo_request, newsletter_signup, ebook_download, webinar_registration]}
+
+  - name: stg_crm_contacts
+    description: CRM contacts, one per person.
+    columns:
+      - name: contact_id
+        data_tests: [unique, not_null]
+      - name: person_key
+        data_tests: [unique, not_null]
+      - name: email
+        data_tests: [unique, not_null]
+
+  - name: stg_crm_leads
+    description: CRM leads with normalised email and person_key. Still contains duplicates (D2) — see int_leads_stitched.
+    columns:
+      - name: lead_id
+        data_tests: [unique, not_null]
+      - name: person_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_crm_contacts'), field: person_key}
+      - name: form_fill_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('stg_form_fills'), field: form_fill_id}
+      - name: lead_source
+        data_tests:
+          - accepted_values:
+              arguments: {values: [web_form, list_import, sales_manual]}
+      - name: created_at
+        data_tests: [not_null]
+
+  - name: stg_crm_opportunities
+    description: CRM opportunities, typed.
+    columns:
+      - name: opportunity_id
+        data_tests: [unique, not_null]
+      - name: contact_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_crm_contacts'), field: contact_id}
+      - name: stage
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: [prospecting, discovery, proposal, negotiation, closed_won, closed_lost]}
+      - name: amount_usd
+        data_tests: [not_null]
+
+  - name: stg_crm_opportunity_stage_history
+    description: Stage entries per opportunity with exited_at derived from the next entry.
+    columns:
+      - name: stage_history_id
+        data_tests: [unique, not_null]
+      - name: opportunity_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_crm_opportunities'), field: opportunity_id}
+      - name: stage
+        data_tests:
+          - accepted_values:
+              arguments: {values: [prospecting, discovery, proposal, negotiation, closed_won, closed_lost]}
+      - name: entered_at
+        data_tests: [not_null]

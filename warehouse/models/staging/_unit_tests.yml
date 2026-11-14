@@ -1,0 +1,68 @@
+version: 2
+
+# D-18: fixtures for the timezone conversions at the DST edges. The generator keeps synthetic
+# events at 07:00-22:59 local (D-16), so these rows are the only coverage of the fall-back hour.
+# Inputs are `format: sql` because dbt cannot read column types from the external Parquet sources.
+
+unit_tests:
+  - name: session_date_is_local_across_dst
+    description: >
+      session_date is the America/New_York day of a UTC session_start, including the repeated
+      01:00-01:59 hour on 2025-11-02 (fall back) and the skipped hour on 2026-03-08 (spring forward).
+      session_start_at stays UTC, so the two 01:30 local sessions keep distinct instants.
+    model: stg_web_sessions
+    given:
+      - input: source('raw', 'web_sessions')
+        format: sql
+        rows: |
+          select 'fb_prev_day' as session_id, 'a' as anonymous_id, timestamp '2025-11-02 03:59:59' as session_start, null::varchar as utm_source, null::varchar as utm_medium, null::varchar as utm_campaign, null::varchar as referrer_domain, '/' as landing_page, 1::bigint as pageviews  -- 11-01 23:59:59 EDT
+          union all select 'fb_midnight' as session_id, 'a' as anonymous_id, timestamp '2025-11-02 04:00:00' as session_start, null::varchar as utm_source, null::varchar as utm_medium, null::varchar as utm_campaign, null::varchar as referrer_domain, '/' as landing_page, 1::bigint as pageviews  -- 11-02 00:00:00 EDT
+          union all select 'fb_0130_edt' as session_id, 'a' as anonymous_id, timestamp '2025-11-02 05:30:00' as session_start, null::varchar as utm_source, null::varchar as utm_medium, null::varchar as utm_campaign, null::varchar as referrer_domain, '/' as landing_page, 1::bigint as pageviews  -- 11-02 01:30 EDT (first)
+          union all select 'fb_0130_est' as session_id, 'a' as anonymous_id, timestamp '2025-11-02 06:30:00' as session_start, null::varchar as utm_source, null::varchar as utm_medium, null::varchar as utm_campaign, null::varchar as referrer_domain, '/' as landing_page, 1::bigint as pageviews  -- 11-02 01:30 EST (repeat)
+          union all select 'fb_2330_est' as session_id, 'a' as anonymous_id, timestamp '2025-11-03 04:30:00' as session_start, null::varchar as utm_source, null::varchar as utm_medium, null::varchar as utm_campaign, null::varchar as referrer_domain, '/' as landing_page, 1::bigint as pageviews  -- 11-02 23:30 EST
+          union all select 'fb_next_day' as session_id, 'a' as anonymous_id, timestamp '2025-11-03 05:00:00' as session_start, null::varchar as utm_source, null::varchar as utm_medium, null::varchar as utm_campaign, null::varchar as referrer_domain, '/' as landing_page, 1::bigint as pageviews  -- 11-03 00:00 EST
+          union all select 'sf_2330_est' as session_id, 'a' as anonymous_id, timestamp '2026-03-08 04:30:00' as session_start, null::varchar as utm_source, null::varchar as utm_medium, null::varchar as utm_campaign, null::varchar as referrer_domain, '/' as landing_page, 1::bigint as pageviews  -- 03-07 23:30 EST
+          union all select 'sf_0159_est' as session_id, 'a' as anonymous_id, timestamp '2026-03-08 06:59:59' as session_start, null::varchar as utm_source, null::varchar as utm_medium, null::varchar as utm_campaign, null::varchar as referrer_domain, '/' as landing_page, 1::bigint as pageviews  -- 03-08 01:59:59 EST
+          union all select 'sf_0300_edt' as session_id, 'a' as anonymous_id, timestamp '2026-03-08 07:00:00' as session_start, null::varchar as utm_source, null::varchar as utm_medium, null::varchar as utm_campaign, null::varchar as referrer_domain, '/' as landing_page, 1::bigint as pageviews  -- 03-08 03:00 EDT
+          union all select 'sf_2330_edt' as session_id, 'a' as anonymous_id, timestamp '2026-03-09 03:30:00' as session_start, null::varchar as utm_source, null::varchar as utm_medium, null::varchar as utm_campaign, null::varchar as referrer_domain, '/' as landing_page, 1::bigint as pageviews  -- 03-08 23:30 EDT
+    expect:
+      rows:
+        - {session_id: fb_prev_day, session_start_at: "2025-11-02 03:59:59", session_date: "2025-11-01"}
+        - {session_id: fb_midnight, session_start_at: "2025-11-02 04:00:00", session_date: "2025-11-02"}
+        - {session_id: fb_0130_edt, session_start_at: "2025-11-02 05:30:00", session_date: "2025-11-02"}
+        - {session_id: fb_0130_est, session_start_at: "2025-11-02 06:30:00", session_date: "2025-11-02"}
+        - {session_id: fb_2330_est, session_start_at: "2025-11-03 04:30:00", session_date: "2025-11-02"}
+        - {session_id: fb_next_day, session_start_at: "2025-11-03 05:00:00", session_date: "2025-11-03"}
+        - {session_id: sf_2330_est, session_start_at: "2026-03-08 04:30:00", session_date: "2026-03-07"}
+        - {session_id: sf_0159_est, session_start_at: "2026-03-08 06:59:59", session_date: "2026-03-08"}
+        - {session_id: sf_0300_edt, session_start_at: "2026-03-08 07:00:00", session_date: "2026-03-08"}
+        - {session_id: sf_2330_edt, session_start_at: "2026-03-09 03:30:00", session_date: "2026-03-08"}
+
+  - name: form_fill_local_to_utc_across_dst
+    description: >
+      D3 conversion of naive America/New_York fill times to UTC at the DST edges. A naive time in
+      the repeated 01:00-01:59 hour on fall-back day is ambiguous; DuckDB resolves it to the
+      second (EST) occurrence, i.e. the later instant, so a converted fill can be up to an hour
+      late but never earlier than the real submission (assert_form_fill_after_session holds).
+      A naive time in the skipped spring-forward hour is shifted forward one hour.
+    model: stg_form_fills
+    given:
+      - input: source('raw', 'form_fills')
+        format: sql
+        rows: |
+          select 'fb_0059' as form_fill_id, 's_fb_0059' as session_id, 'a' as anonymous_id, 'fb_0059@x.example.com' as email, 'contact_us' as form_name, timestamp '2025-11-02 00:59:00' as submitted_at  -- unambiguous EDT
+          union all select 'fb_0130' as form_fill_id, 's_fb_0130' as session_id, 'a' as anonymous_id, 'fb_0130@x.example.com' as email, 'contact_us' as form_name, timestamp '2025-11-02 01:30:00' as submitted_at  -- ambiguous -> EST
+          union all select 'fb_0200' as form_fill_id, 's_fb_0200' as session_id, 'a' as anonymous_id, 'fb_0200@x.example.com' as email, 'contact_us' as form_name, timestamp '2025-11-02 02:00:00' as submitted_at  -- unambiguous EST
+          union all select 'fb_2330' as form_fill_id, 's_fb_2330' as session_id, 'a' as anonymous_id, 'fb_2330@x.example.com' as email, 'contact_us' as form_name, timestamp '2025-11-02 23:30:00' as submitted_at  -- EST, UTC is 11-03
+          union all select 'sf_0159' as form_fill_id, 's_sf_0159' as session_id, 'a' as anonymous_id, 'sf_0159@x.example.com' as email, 'contact_us' as form_name, timestamp '2026-03-08 01:59:00' as submitted_at  -- unambiguous EST
+          union all select 'sf_0230' as form_fill_id, 's_sf_0230' as session_id, 'a' as anonymous_id, 'sf_0230@x.example.com' as email, 'contact_us' as form_name, timestamp '2026-03-08 02:30:00' as submitted_at  -- does not exist locally
+          union all select 'sf_0300' as form_fill_id, 's_sf_0300' as session_id, 'a' as anonymous_id, 'sf_0300@x.example.com' as email, 'contact_us' as form_name, timestamp '2026-03-08 03:00:00' as submitted_at  -- unambiguous EDT
+    expect:
+      rows:
+        - {form_fill_id: fb_0059, submitted_at: "2025-11-02 04:59:00", submitted_date: "2025-11-02"}
+        - {form_fill_id: fb_0130, submitted_at: "2025-11-02 06:30:00", submitted_date: "2025-11-02"}
+        - {form_fill_id: fb_0200, submitted_at: "2025-11-02 07:00:00", submitted_date: "2025-11-02"}
+        - {form_fill_id: fb_2330, submitted_at: "2025-11-03 04:30:00", submitted_date: "2025-11-02"}
+        - {form_fill_id: sf_0159, submitted_at: "2026-03-08 06:59:00", submitted_date: "2026-03-08"}
+        - {form_fill_id: sf_0230, submitted_at: "2026-03-08 07:30:00", submitted_date: "2026-03-08"}
+        - {form_fill_id: sf_0300, submitted_at: "2026-03-08 07:00:00", submitted_date: "2026-03-08"}

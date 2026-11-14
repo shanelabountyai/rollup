@@ -1,0 +1,28 @@
+name: rollup
+version: "0.1.0"
+config-version: 2
+profile: rollup
+
+model-paths: ["models"]
+test-paths: ["tests"]
+macro-paths: ["macros"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+vars:
+  local_tz: "America/New_York"
+
+models:
+  rollup:
+    staging:
+      +schema: staging
+      +materialized: view
+    intermediate:
+      +schema: intermediate
+      +materialized: table
+    marts:
+      +schema: marts
+      +materialized: table
+
+data_tests:
+  +severity: error
