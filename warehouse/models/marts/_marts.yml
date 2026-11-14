@@ -122,7 +122,7 @@ models:
         description: Session start, UTC.
         data_tests: [not_null]
       - name: touch_date
-        description: Session date, UTC.
+        description: Session date (America/New_York business day).
         data_tests: [not_null]
       - name: channel_key
         description: Channel of the touch.
@@ -169,7 +169,7 @@ models:
         description: Opportunity creation timestamp, UTC.
         data_tests: [not_null]
       - name: created_date
-        description: Opportunity creation date.
+        description: Opportunity creation date (America/New_York business day).
         data_tests: [not_null]
       - name: stage
         description: Current stage.
@@ -216,7 +216,7 @@ models:
           arguments: {combination: [week_start, channel_key]}
     columns:
       - name: week_start
-        description: Monday of the week.
+        description: Monday of the week (America/New_York business days, same calendar as spend).
         data_tests: [not_null]
       - name: channel_key
         description: Channel.
@@ -277,5 +277,5 @@ models:
         description: Revenue from those deals.
         data_tests: [not_null, non_negative]
       - name: cac_usd
-        description: spend_usd / new_customers; null when not paid or no customers.
+        description: This month's paid spend / deals closed-won this month first-touched by the channel (not a spend cohort); null when not paid or no customers.
         data_tests: [non_negative]

@@ -19,6 +19,11 @@
     {%- if var('unfix', '') == 'D2' -%}md5({{ email_col }}){%- else -%}md5(lower(trim({{ email_col }}))){%- endif -%}
 {%- endmacro %}
 
+{# Reporting calendar (D-15): UTC timestamp -> business date in local_tz, matching ad-platform spend days. #}
+{% macro local_date(utc_col) -%}
+    cast(timezone('{{ var("local_tz") }}', timezone('UTC', {{ utc_col }})) as date)
+{%- endmacro %}
+
 {# D3: naive local wall-clock timestamp -> naive UTC timestamp. #}
 {% macro local_to_utc(col) -%}
     {%- if var('unfix', '') == 'D3' -%}{{ col }}{%- else -%}timezone('UTC', timezone('{{ var("local_tz") }}', {{ col }})){%- endif -%}

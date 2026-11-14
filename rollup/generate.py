@@ -551,7 +551,9 @@ def build_crm(
                 "created_at": created,
                 "stage": stage,
                 "amount_usd": amount,
-                "close_date": closed_at.date() if closed_at is not None else None,
+                "close_date": (
+                    closed_at.tz_localize("UTC").tz_convert(LOCAL_TZ).date() if closed_at is not None else None
+                ),
                 "is_closed": closed_at is not None,
                 "is_won": is_won,
             }

@@ -35,7 +35,8 @@ Branch `kickoff`, PR #1 (never merged by the agent). Phase 2+ is out of scope.
 ## Status
 - [x] Plan + PR opened
 - [x] Generator (`rollup/generate.py`, `rollup/defects.py`)
-- [x] dbt project (19 models, 188 tests incl. 9 custom singular)
+- [x] dbt project (19 models, 191 tests incl. 12 custom singular)
+- [x] PR #1 review fixes: local business-day reporting calendar (D-15), pinned deps (D-14), 3 reconciliation tests
 - [x] Tests + CI (pytest 11 + 4 mutation; `.github/workflows/ci.yml`)
 - [x] Gate run + PR body — passed locally 2026-11-14 (see PR #1)
 

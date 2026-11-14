@@ -1,4 +1,5 @@
--- Weekly funnel by channel. Leads/opps/wins use last-touch (converting) channel.
+-- Weekly funnel by channel, bucketed on local business days (same calendar as spend).
+-- Leads/opps/wins use last-touch (converting) channel.
 with weeks as (
     select range::date as week_start
     from range(
@@ -19,14 +20,14 @@ sessions as (
 ),
 
 fills as (
-    select date_trunc('week', f.submitted_at)::date as week_start, s.channel_key, count(*) as form_fills
+    select date_trunc('week', f.submitted_date)::date as week_start, s.channel_key, count(*) as form_fills
     from {{ ref('stg_form_fills') }} f
     join {{ ref('int_sessions_classified') }} s using (session_id)
     group by 1, 2
 ),
 
 leads as (
-    select date_trunc('week', l.first_lead_created_at)::date as week_start,
+    select date_trunc('week', {{ local_date('l.first_lead_created_at') }})::date as week_start,
            coalesce(s.channel_key, 'direct') as channel_key,
            count(*) as new_leads
     from {{ ref('int_leads_stitched') }} l

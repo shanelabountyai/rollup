@@ -3,7 +3,7 @@ select
     session_id                                 as touch_id,
     person_key,
     session_start_at                           as touched_at,
-    session_date                               as touch_date,
+    session_date                               as touch_date,  -- local business day
     channel_key,
     campaign_id,
     touch_number,
