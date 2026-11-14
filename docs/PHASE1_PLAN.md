@@ -12,8 +12,8 @@ Branch `kickoff`, PR #1 (never merged by the agent). Phase 2+ is out of scope.
    - Injected defects (each documented in `rollup/defects.py` and caught by a custom dbt test):
      - **D1 UTM casing drift** — `utm_source/medium/campaign` randomly upper/title/padded.
      - **D2 duplicate leads** — ~6% of leads re-created with email case/whitespace variants.
-     - **D3 timezone mismatch** — `meta_ads` spend dates are UTC-shifted timestamps while others are local dates;
-       web sessions are UTC timestamps; form fills are `America/New_York` local strings.
+     - **D3 timezone mismatch** — web sessions are UTC timestamps; form fills are naive
+       `America/New_York` wall-clock timestamps.
      - **D4 renamed campaign** — one campaign's name changes mid-period (same id on the platform, new
        name in UTMs after the rename date).
 2. **dbt-duckdb project** in `warehouse/` reading Parquet via `read_parquet` sources.
@@ -34,7 +34,10 @@ Branch `kickoff`, PR #1 (never merged by the agent). Phase 2+ is out of scope.
 
 ## Status
 - [x] Plan + PR opened
-- [ ] Generator
-- [ ] dbt project
-- [ ] Tests + CI
-- [ ] Gate run + PR body
+- [x] Generator (`rollup/generate.py`, `rollup/defects.py`)
+- [x] dbt project (19 models, 188 tests incl. 9 custom singular)
+- [x] Tests + CI (pytest 11 + 4 mutation; `.github/workflows/ci.yml`)
+- [x] Gate run + PR body — passed locally 2026-11-14 (see PR #1)
+
+Note: raw tables also include `campaigns` (catalogue snapshot) beyond the plan list; the
+D3 timezone defect landed on form fills (local) vs sessions (UTC) rather than ad spend — see D-09.

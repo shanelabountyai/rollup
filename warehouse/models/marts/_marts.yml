@@ -1,0 +1,281 @@
+version: 2
+
+# Column descriptions here are the schema context the Phase 3 text-to-SQL step reads from the manifest.
+
+models:
+  - name: dim_channel
+    description: Marketing channels. One row per channel_key.
+    columns:
+      - name: channel_key
+        description: Channel identifier (paid_search, paid_social, organic_search, referral, email, direct).
+        data_tests: [unique, not_null]
+      - name: channel_name
+        description: Human-readable channel name.
+        data_tests: [unique, not_null]
+      - name: channel_group
+        description: paid, owned or earned.
+        data_tests:
+          - accepted_values:
+              arguments: {values: [paid, owned, earned]}
+      - name: is_paid
+        description: True for channels that carry ad spend.
+        data_tests: [not_null]
+
+  - name: dim_campaign
+    description: Paid campaigns, one row per campaign_id, with current name and any previous names (renames collapsed).
+    columns:
+      - name: campaign_id
+        description: Stable ad-platform campaign id.
+        data_tests: [unique, not_null]
+      - name: campaign_name
+        description: Current campaign name.
+        data_tests: [not_null]
+      - name: utm_campaign_key
+        description: utm_campaign value for the current name.
+        data_tests: [unique, not_null]
+      - name: platform
+        description: Ad platform (google_ads, linkedin_ads, meta_ads).
+        data_tests:
+          - accepted_values:
+              arguments: {values: [google_ads, linkedin_ads, meta_ads]}
+      - name: channel_key
+        description: Channel the campaign belongs to.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_channel'), field: channel_key}
+      - name: objective
+        description: Platform campaign objective.
+        data_tests:
+          - accepted_values:
+              arguments: {values: [conversions, traffic, lead_generation, awareness]}
+      - name: start_date
+        description: Campaign start date.
+        data_tests: [not_null]
+      - name: end_date
+        description: Campaign end date; null if still running.
+      - name: daily_budget_usd
+        description: Configured daily budget in USD.
+      - name: was_renamed
+        description: True if the campaign has carried more than one name.
+        data_tests: [not_null]
+      - name: previous_names
+        description: Earlier names, oldest first, separated by ' | '.
+      - name: lifetime_spend_usd
+        description: Total spend in USD over the data period.
+        data_tests: [not_null, non_negative]
+      - name: first_spend_date
+        description: First day with spend.
+      - name: last_spend_date
+        description: Last day with spend.
+
+  - name: fct_spend
+    description: Ad spend at campaign x day grain.
+    columns:
+      - name: spend_id
+        description: campaign_id|spend_date.
+        data_tests: [unique, not_null]
+      - name: spend_date
+        description: Day of spend.
+        data_tests: [not_null]
+      - name: spend_week
+        description: Monday of the spend week.
+        data_tests: [not_null]
+      - name: spend_month
+        description: First day of the spend month.
+        data_tests: [not_null]
+      - name: campaign_id
+        description: Campaign id.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_campaign'), field: campaign_id}
+      - name: channel_key
+        description: Channel (paid_search or paid_social).
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_channel'), field: channel_key}
+      - name: platform
+        description: Ad platform.
+        data_tests: [not_null]
+      - name: spend_usd
+        description: Spend in USD.
+        data_tests: [not_null, non_negative]
+      - name: impressions
+        description: Ad impressions.
+        data_tests: [not_null, non_negative]
+      - name: clicks
+        description: Ad clicks.
+        data_tests: [not_null, non_negative]
+
+  - name: fct_touches
+    description: Pre-conversion marketing touches (sessions) for every person who became a lead, with first, last and linear attribution credit.
+    columns:
+      - name: touch_id
+        description: Session id of the touch.
+        data_tests: [unique, not_null]
+      - name: person_key
+        description: Stitched person identifier.
+        data_tests: [not_null]
+      - name: touched_at
+        description: Session start, UTC.
+        data_tests: [not_null]
+      - name: touch_date
+        description: Session date, UTC.
+        data_tests: [not_null]
+      - name: channel_key
+        description: Channel of the touch.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_channel'), field: channel_key}
+      - name: campaign_id
+        description: Campaign for paid touches; null otherwise.
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_campaign'), field: campaign_id}
+      - name: touch_number
+        description: 1-based order of the touch for the person.
+        data_tests: [not_null]
+      - name: touch_count
+        description: Total pre-conversion touches for the person.
+        data_tests: [not_null]
+      - name: is_first_touch
+        description: True for the first touch.
+        data_tests: [not_null]
+      - name: is_last_touch
+        description: True for the converting (last) touch.
+        data_tests: [not_null]
+      - name: linear_weight
+        description: Linear attribution credit (1 / touch_count).
+        data_tests: [not_null]
+
+  - name: fct_pipeline
+    description: Opportunities, one row each, with outcome and first/last-touch attribution.
+    columns:
+      - name: opportunity_id
+        description: CRM opportunity id.
+        data_tests: [unique, not_null]
+      - name: contact_id
+        description: CRM contact id.
+        data_tests: [not_null]
+      - name: person_key
+        description: Stitched person identifier.
+        data_tests: [not_null]
+      - name: opportunity_name
+        description: Opportunity name.
+      - name: created_at
+        description: Opportunity creation timestamp, UTC.
+        data_tests: [not_null]
+      - name: created_date
+        description: Opportunity creation date.
+        data_tests: [not_null]
+      - name: stage
+        description: Current stage.
+        data_tests:
+          - accepted_values:
+              arguments: {values: [prospecting, discovery, proposal, negotiation, closed_won, closed_lost]}
+      - name: amount_usd
+        description: Opportunity amount in USD.
+        data_tests: [not_null, non_negative]
+      - name: is_closed
+        description: True if closed won or lost.
+        data_tests: [not_null]
+      - name: is_won
+        description: True if closed won.
+        data_tests: [not_null]
+      - name: close_date
+        description: Close date; null while open.
+      - name: won_amount_usd
+        description: amount_usd if won, else 0.
+        data_tests: [not_null, non_negative]
+      - name: days_to_close
+        description: Days from creation to close; null while open.
+      - name: first_lead_created_at
+        description: When the person first became a lead.
+      - name: first_touch_channel_key
+        description: Channel of the person's first touch.
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_channel'), field: channel_key}
+      - name: first_touch_campaign_id
+        description: Campaign of the first touch (paid only).
+      - name: last_touch_channel_key
+        description: Channel of the converting touch.
+        data_tests:
+          - relationships:
+              arguments: {to: ref('dim_channel'), field: channel_key}
+      - name: last_touch_campaign_id
+        description: Campaign of the converting touch (paid only).
+
+  - name: mart_funnel_weekly
+    description: Weekly funnel by channel (week_start x channel_key). Leads, opportunities and wins credited to the converting (last-touch) channel.
+    data_tests:
+      - unique_combination:
+          arguments: {combination: [week_start, channel_key]}
+    columns:
+      - name: week_start
+        description: Monday of the week.
+        data_tests: [not_null]
+      - name: channel_key
+        description: Channel.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_channel'), field: channel_key}
+      - name: sessions
+        description: Web sessions.
+        data_tests: [not_null, non_negative]
+      - name: form_fills
+        description: Form fills.
+        data_tests: [not_null, non_negative]
+      - name: new_leads
+        description: New de-duplicated leads (people).
+        data_tests: [not_null, non_negative]
+      - name: opportunities_created
+        description: Opportunities created.
+        data_tests: [not_null, non_negative]
+      - name: pipeline_created_usd
+        description: Sum of amount_usd for opportunities created.
+        data_tests: [not_null, non_negative]
+      - name: deals_won
+        description: Opportunities closed won.
+        data_tests: [not_null, non_negative]
+      - name: won_revenue_usd
+        description: Revenue from deals won.
+        data_tests: [not_null, non_negative]
+      - name: spend_usd
+        description: Ad spend in USD.
+        data_tests: [not_null, non_negative]
+
+  - name: mart_cac_by_channel
+    description: Monthly customer acquisition cost by channel (month_start x channel_key). New customers credited by first touch; CAC only for paid channels.
+    data_tests:
+      - unique_combination:
+          arguments: {combination: [month_start, channel_key]}
+    columns:
+      - name: month_start
+        description: First day of the month.
+        data_tests: [not_null]
+      - name: channel_key
+        description: Channel.
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('dim_channel'), field: channel_key}
+      - name: is_paid
+        description: True for paid channels.
+        data_tests: [not_null]
+      - name: spend_usd
+        description: Ad spend in USD.
+        data_tests: [not_null, non_negative]
+      - name: new_customers
+        description: Deals won in the month whose first touch was this channel.
+        data_tests: [not_null, non_negative]
+      - name: new_customer_revenue_usd
+        description: Revenue from those deals.
+        data_tests: [not_null, non_negative]
+      - name: cac_usd
+        description: spend_usd / new_customers; null when not paid or no customers.
+        data_tests: [non_negative]

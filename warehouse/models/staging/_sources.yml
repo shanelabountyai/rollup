@@ -1,0 +1,24 @@
+version: 2
+
+sources:
+  - name: raw
+    description: Parquet files written by `python -m rollup.generate` (seeded, synthetic).
+    config:
+      external_location: "read_parquet('{{ env_var('ROLLUP_RAW_DIR', '../data/raw') }}/{name}.parquet')"
+    tables:
+      - name: campaigns
+        description: Ad platform campaign catalogue snapshot (current names only).
+      - name: ad_spend
+        description: Daily spend per campaign across google_ads, linkedin_ads, meta_ads. Carries the campaign name as of each day (D4).
+      - name: web_sessions
+        description: Web sessions with raw UTMs (D1 casing drift). session_start is UTC.
+      - name: form_fills
+        description: Form submissions. submitted_at is naive America/New_York wall-clock time (D3).
+      - name: crm_contacts
+        description: CRM contacts, one per real person.
+      - name: crm_leads
+        description: CRM leads, including duplicates whose email differs only by case/whitespace (D2).
+      - name: crm_opportunities
+        description: CRM opportunities with current stage and outcome.
+      - name: crm_opportunity_stage_history
+        description: One row per stage an opportunity entered.

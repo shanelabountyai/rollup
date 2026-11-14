@@ -1,0 +1,63 @@
+version: 2
+
+models:
+  - name: int_campaign_map
+    description: Campaign mapping table — every utm_campaign key a campaign has ever used -> stable campaign_id (D4).
+    columns:
+      - name: utm_campaign_key
+        data_tests: [unique, not_null]
+      - name: campaign_id
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_campaigns'), field: campaign_id}
+      - name: is_current_name
+        data_tests: [not_null]
+
+  - name: int_sessions_classified
+    description: Every session with channel_key and (for paid sessions) the mapped campaign_id.
+    columns:
+      - name: session_id
+        data_tests: [unique, not_null]
+      - name: channel_key
+        data_tests:
+          - not_null
+          - accepted_values:
+              arguments: {values: [paid_search, paid_social, organic_search, referral, email, direct]}
+      - name: campaign_id
+        data_tests:
+          - relationships:
+              arguments: {to: ref('stg_campaigns'), field: campaign_id}
+
+  - name: int_leads_stitched
+    description: Identity-stitched leads — one row per person (normalised email), duplicates collapsed (D2).
+    columns:
+      - name: person_key
+        data_tests: [unique, not_null]
+      - name: primary_lead_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_crm_leads'), field: lead_id}
+      - name: contact_id
+        data_tests:
+          - unique
+          - not_null
+          - relationships:
+              arguments: {to: ref('stg_crm_contacts'), field: contact_id}
+      - name: lead_count
+        data_tests: [not_null]
+      - name: form_fill_id
+        data_tests: [unique, not_null]
+
+  - name: int_person_touches
+    description: Sessions per known person up to their first lead.
+    columns:
+      - name: session_id
+        data_tests: [unique, not_null]
+      - name: person_key
+        data_tests:
+          - not_null
+          - relationships:
+              arguments: {to: ref('int_leads_stitched'), field: person_key}
