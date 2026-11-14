@@ -26,13 +26,13 @@ marketing-ops questions against the marts, run through the runner.
 ## Tasks
 
 1. [x] Plan (this file) committed first.
-2. [ ] `rollup/guards.py`: `check_sql(sql, max_rows) -> GuardedQuery` or `GuardViolation(code, message)`.
-3. [ ] `rollup/runner.py`: `run_sql(sql, db_path, max_rows, timeout_s) -> QueryResult`; `open_readonly(db_path)`.
-4. [ ] `rollup/queries/`: 12 hand-written `.sql` files + loader; `rollup/query.py` CLI; `make query`, `make queries`.
-5. [ ] Tests: guard unit tests (attack corpus), hypothesis property tests for RU-01/RU-02, runner tests against
+2. [x] `rollup/guards.py`: `check_sql(sql, max_rows) -> GuardedQuery` or `GuardViolation(code, message)`.
+3. [x] `rollup/runner.py`: `run_sql(sql, db_path, max_rows, timeout_s) -> QueryResult`; `open_readonly(db_path)`.
+4. [x] `rollup/queries/`: 12 hand-written `.sql` files + loader; `rollup/query.py` CLI; `make query`, `make queries`.
+5. [x] Tests: guard unit tests (attack corpus), hypothesis property tests for RU-01/RU-02, runner tests against
    the built warehouse, hand-written query tests with reconciliation checks.
-6. [ ] CI: install dev deps incl. hypothesis; run the warehouse-backed tests after `make build`.
-7. [ ] DECISIONS rows, README status, PR with gate results.
+6. [x] CI: install dev deps incl. hypothesis; run the warehouse-backed tests after `make build`.
+7. [x] DECISIONS rows, README status, PR with gate results.
 
 ## Invariants and the tests that prove them
 
