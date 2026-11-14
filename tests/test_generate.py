@@ -16,6 +16,25 @@ def test_same_seed_same_bytes(tmp_path: Path) -> None:
     assert set(a) == set(TABLES)
 
 
+# D-19: sha256 of each Parquet file for seed 27, with the exact numpy / pandas / pyarrow pins
+# in pyproject.toml (D-14). A dependency bump or a generator change that moves these must
+# update them in the same commit and say why.
+GOLDEN_SEED_27 = {
+    "campaigns": "bdf46ef2a6423e5abf9866bf9b6777ee430d5305e05ad3bda421b28d837c9f2c",
+    "ad_spend": "1113f5d31ca8f9a29499e5bb0339bc076267e2619cce958fe15fe6aa9c50963c",
+    "web_sessions": "0f411df904b2002881a140f5354325bf21c9320779dab64d260ffc7e1a6ef35b",
+    "form_fills": "189d25f3e47854f7ade47c6fbf9f649d06c50ae4e7ab9496d4212165886e4db3",
+    "crm_contacts": "9dcddcede11e8332b4e461907a0705fef82c79a2f359fbb66fcaaec8bf93ea49",
+    "crm_leads": "c9482f21814eed9652e9350228ae007d53da5a37584db16a23acaa33c21e9b34",
+    "crm_opportunities": "55ab3ec8b32284db47a2a7c2a68e5039521e64dfd5c5b132f66662931ed42838",
+    "crm_opportunity_stage_history": "79fbfbc446ec02967d21e5168f5cddd620d294e7e0808155c2963171110a6e2e",
+}
+
+
+def test_seed_27_matches_golden_hashes(tmp_path: Path) -> None:
+    assert write_parquet(generate(27), tmp_path) == GOLDEN_SEED_27
+
+
 def test_different_seed_differs(tmp_path: Path) -> None:
     a = write_parquet(generate(27), tmp_path / "a")
     b = write_parquet(generate(28), tmp_path / "b")
