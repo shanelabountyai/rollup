@@ -1,5 +1,5 @@
--- The funnel credits leads via the converting session and opps/wins via last_touch_channel_key;
--- both must name the same channel for every person.
+-- The funnel's *_last_touch columns credit leads via the converting session and opps/wins via
+-- last_touch_channel_key; both must name the same channel for every person.
 select p.opportunity_id, s.channel_key as lead_channel, p.last_touch_channel_key
 from {{ ref('fct_pipeline') }} p
 join {{ ref('int_leads_stitched') }} l using (person_key)

@@ -155,7 +155,9 @@ models:
         data_tests: [not_null]
 
   - name: fct_pipeline
-    description: Opportunities, one row each, with outcome and first/last-touch attribution.
+    description: >
+      Opportunities, one row each, with outcome and first/last-touch attribution. First touch is the
+      primary credit in the marts (D-20); last touch is carried for comparison.
     columns:
       - name: opportunity_id
         description: CRM opportunity id.
@@ -216,7 +218,11 @@ models:
         description: Campaign of the converting touch (paid only).
 
   - name: mart_funnel_weekly
-    description: Weekly funnel by channel (week_start x channel_key). Leads, opportunities and wins credited to the converting (last-touch) channel.
+    description: >
+      Weekly funnel by channel (week_start x channel_key). Leads, opportunities and wins are credited to the
+      person's FIRST-touch channel (D-20), the same model as mart_cac_by_channel, so funnel wins and CAC
+      customers agree per channel. The *_last_touch columns credit the converting (last-touch) channel for
+      comparison. People with no pre-conversion touch are credited to direct under both models.
     data_tests:
       - unique_combination:
           arguments: {combination: [week_start, channel_key]}
@@ -237,26 +243,46 @@ models:
         description: Form fills.
         data_tests: [not_null, non_negative]
       - name: new_leads
-        description: New de-duplicated leads (people).
+        description: New de-duplicated leads (people), credited by first touch.
         data_tests: [not_null, non_negative]
       - name: opportunities_created
-        description: Opportunities created.
+        description: Opportunities created, credited by first touch.
         data_tests: [not_null, non_negative]
       - name: pipeline_created_usd
-        description: Sum of amount_usd for opportunities created.
+        description: Sum of amount_usd for opportunities created, credited by first touch.
         data_tests: [not_null, non_negative]
       - name: deals_won
-        description: Opportunities closed won.
+        description: Opportunities closed won in the week, credited by first touch. Per channel, sums to mart_cac_by_channel.new_customers.
         data_tests: [not_null, non_negative]
       - name: won_revenue_usd
-        description: Revenue from deals won.
+        description: Revenue from deals won, credited by first touch.
         data_tests: [not_null, non_negative]
       - name: spend_usd
         description: Ad spend in USD.
         data_tests: [not_null, non_negative]
+      - name: new_leads_last_touch
+        description: New de-duplicated leads (people), credited by last touch (the converting session's channel).
+        data_tests: [not_null, non_negative]
+      - name: opportunities_created_last_touch
+        description: Opportunities created, credited by last touch.
+        data_tests: [not_null, non_negative]
+      - name: pipeline_created_usd_last_touch
+        description: Sum of amount_usd for opportunities created, credited by last touch.
+        data_tests: [not_null, non_negative]
+      - name: deals_won_last_touch
+        description: Opportunities closed won in the week, credited by last touch. Per channel, sums to mart_cac_by_channel.new_customers_last_touch.
+        data_tests: [not_null, non_negative]
+      - name: won_revenue_usd_last_touch
+        description: Revenue from deals won, credited by last touch.
+        data_tests: [not_null, non_negative]
 
   - name: mart_cac_by_channel
-    description: Monthly customer acquisition cost by channel (month_start x channel_key). New customers credited by first touch; CAC only for paid channels.
+    description: >
+      Monthly customer acquisition cost by channel (month_start x channel_key). Period convention: a month's
+      paid spend divided by the deals closed-won in that same month (by close_date) — not a spend cohort, so a
+      deal can close months after the spend that sourced it. New customers are credited by FIRST touch (D-20),
+      the same model as mart_funnel_weekly; the *_last_touch columns credit the converting touch for
+      comparison. CAC only for paid channels.
     data_tests:
       - unique_combination:
           arguments: {combination: [month_start, channel_key]}
@@ -277,11 +303,20 @@ models:
         description: Ad spend in USD.
         data_tests: [not_null, non_negative]
       - name: new_customers
-        description: Deals won in the month whose first touch was this channel.
+        description: Deals closed-won in the month whose first touch was this channel. Sums to all won deals.
         data_tests: [not_null, non_negative]
       - name: new_customer_revenue_usd
-        description: Revenue from those deals.
+        description: Revenue from those deals (first touch).
         data_tests: [not_null, non_negative]
       - name: cac_usd
         description: This month's paid spend / deals closed-won this month first-touched by the channel (not a spend cohort); null when not paid or no customers.
+        data_tests: [non_negative]
+      - name: new_customers_last_touch
+        description: Deals closed-won in the month whose last (converting) touch was this channel. Sums to all won deals.
+        data_tests: [not_null, non_negative]
+      - name: new_customer_revenue_usd_last_touch
+        description: Revenue from those deals (last touch).
+        data_tests: [not_null, non_negative]
+      - name: cac_usd_last_touch
+        description: This month's paid spend / deals closed-won this month last-touched by the channel; null when not paid or no customers. For comparison with cac_usd.
         data_tests: [non_negative]
