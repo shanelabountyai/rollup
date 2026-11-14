@@ -186,12 +186,16 @@ def _check_tables(tree: exp.Expression) -> set[str]:
     except SqlglotError as e:
         raise GuardViolation("unresolvable", f"could not resolve table references: {e}") from e
 
-    # Table nodes that refer to a CTE visible in their own scope (unqualified name resolving to a Scope source).
+    # Table nodes that refer to a CTE visible in their own scope: unqualified, and the table's *name* (not its
+    # alias) resolves to a CTE scope. A derived table that shares the name is not a CTE (found by hypothesis:
+    # ``FROM (...) s, "s"`` must not let the real table "s" through).
     cte_refs: set[int] = set()
     for scope in scopes:
         for table in scope.tables:
-            source = scope.sources.get(table.alias_or_name)
-            if isinstance(source, Scope) and not table.args.get("db") and not table.args.get("catalog"):
+            if table.args.get("db") or table.args.get("catalog"):
+                continue
+            source = scope.sources.get(table.name)
+            if isinstance(source, Scope) and source.is_cte:
                 cte_refs.add(id(table))
 
     read: set[str] = set()
