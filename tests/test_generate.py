@@ -6,7 +6,7 @@ from pathlib import Path
 
 import pandas as pd
 
-from rollup.generate import END_DATE, START_DATE, TABLES, generate, write_parquet
+from rollup.generate import END_DATE, LOCAL_TZ, START_DATE, TABLES, generate, write_parquet
 
 
 def test_same_seed_same_bytes(tmp_path: Path) -> None:
@@ -53,3 +53,16 @@ def test_primary_keys_unique(tables: dict[str, pd.DataFrame]) -> None:
     for t, k in keys.items():
         assert tables[t][k].is_unique, t
     assert tables["crm_contacts"]["email"].is_unique
+
+
+def test_close_date_is_local_day_of_close(tables: dict[str, pd.DataFrame]) -> None:
+    """D-15: close_date is the America/New_York day the closing stage was entered (UTC timestamp)."""
+    opps = tables["crm_opportunities"]
+    hist = tables["crm_opportunity_stage_history"]
+    closing = hist[hist["stage"].isin(["closed_won", "closed_lost"])]
+    m = opps[opps["is_closed"]].merge(closing, on="opportunity_id")
+    assert len(m) == opps["is_closed"].sum()
+    local = pd.DatetimeIndex(m["entered_at"]).tz_localize("UTC").tz_convert(LOCAL_TZ).date
+    assert (m["close_date"].to_numpy() == local).all()
+    utc = pd.DatetimeIndex(m["entered_at"]).date
+    assert (m["close_date"].to_numpy() != utc).any()  # the UTC day would differ for evening closes

@@ -8,7 +8,7 @@ Build-log #27. Status: **Phase 1** (generator + dbt models + tests). Spec in `do
 
 ```bash
 pip install -e '.[dev]'
-make build        # seeded synthetic data -> Parquet -> dbt build (models + 191 tests)
+make build        # seeded synthetic data -> Parquet -> dbt build (models + 197 data tests + 3 unit tests)
 make docs         # dbt docs generate
 make ci           # ruff, mypy, pytest, build, docs, defect mutation tests
 ```

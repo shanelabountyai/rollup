@@ -123,7 +123,10 @@ models:
         data_tests: [not_null]
       - name: touch_date
         description: Session date (America/New_York business day).
-        data_tests: [not_null]
+        data_tests:
+          - not_null
+          - local_date_of:
+              arguments: {timestamp_column: touched_at}
       - name: channel_key
         description: Channel of the touch.
         data_tests:
@@ -170,7 +173,10 @@ models:
         data_tests: [not_null]
       - name: created_date
         description: Opportunity creation date (America/New_York business day).
-        data_tests: [not_null]
+        data_tests:
+          - not_null
+          - local_date_of:
+              arguments: {timestamp_column: created_at}
       - name: stage
         description: Current stage.
         data_tests:

@@ -50,6 +50,12 @@ models:
         data_tests: [not_null]
       - name: session_start_at
         data_tests: [not_null]
+      - name: session_date
+        description: Reporting date, the America/New_York day of session_start_at (D-15).
+        data_tests:
+          - not_null
+          - local_date_of:
+              arguments: {timestamp_column: session_start_at}
       - name: utm_medium
         data_tests:
           - accepted_values:
@@ -76,6 +82,12 @@ models:
         data_tests: [unique, not_null]
       - name: submitted_at
         data_tests: [not_null]
+      - name: submitted_date
+        description: Reporting date, the America/New_York day of the fill (D-15).
+        data_tests:
+          - not_null
+          - local_date_of:
+              arguments: {timestamp_column: submitted_at}
       - name: form_name
         data_tests:
           - accepted_values:
