@@ -25,15 +25,15 @@ Not in Phase 3: chart rendering, the web UI, table formatting beyond the CLI, RE
 ## Tasks
 
 1. [x] Plan (this file) committed first.
-2. [ ] `rollup/schema_context.py`: manifest → marts-only context + prompt text.
-3. [ ] `rollup/llm.py`: `DraftModel` protocol, `Draft` (SQL or refusal), `RecordedModel` (fixtures), `ReferenceModel`
+2. [x] `rollup/schema_context.py`: manifest → marts-only context + prompt text.
+3. [x] `rollup/llm.py`: `DraftModel` protocol, `Draft` (SQL or refusal), `RecordedModel` (fixtures), `ReferenceModel`
    (drafts the golden reference SQL, used to prove the harness), optional `AnthropicModel` live adapter (lazy import,
    needs a key and a model id from the environment; never constructed in tests with a real client).
-4. [ ] `rollup/validator.py`: RU-03 number extraction and matching; deterministic fallback paragraph.
-5. [ ] `rollup/ask.py` + `python -m rollup.ask` CLI: question → draft → guards → run → answer → validate/fallback.
-6. [ ] `rollup/eval/`: 40 golden `.sql` files, refusal set, recorded fixtures (good drafts, wrong-but-safe drafts,
+4. [x] `rollup/validator.py`: RU-03 number extraction and matching; deterministic fallback paragraph.
+5. [x] `rollup/ask.py` + `python -m rollup.ask` CLI: question → draft → guards → run → answer → validate/fallback.
+6. [x] `rollup/eval/`: 40 golden `.sql` files, refusal set, recorded fixtures (good drafts, wrong-but-safe drafts,
    guard-violating drafts, erroring drafts, dishonest paragraphs), equivalence scorer, runner, `make eval`.
-7. [ ] Tests (below), CI step, DECISIONS rows, README status, PR.
+7. [x] Tests (below), CI step, DECISIONS rows, README status, PR.
 
 ## Acceptance items and the tests that prove them
 
