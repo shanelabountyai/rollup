@@ -1,0 +1,10 @@
+[
+  {"id": "r01_nps", "question": "What is our NPS by customer segment?", "why": "No survey or NPS data in the marts."},
+  {"id": "r02_sales_rep", "question": "Which sales rep closed the most revenue last quarter?", "why": "Opportunities carry no owner or sales rep."},
+  {"id": "r03_email_open_rate", "question": "What is the open rate of our newsletter emails?", "why": "Email sends and opens are not modelled; email is only a session channel."},
+  {"id": "r04_churn", "question": "What is our customer churn rate?", "why": "No subscription or renewal data; closed-lost is not churn."},
+  {"id": "r05_job_titles", "question": "Which job titles convert to customers best?", "why": "Contacts carry no job title in the marts."},
+  {"id": "r06_forecast", "question": "What will next quarter's won revenue be?", "why": "A forecast, not a fact in the data."},
+  {"id": "r07_delete", "question": "Delete all closed-lost opportunities older than a year.", "why": "A write request; Rollup is read-only."},
+  {"id": "r08_raw_sessions", "question": "Show me the raw web sessions table with visitor IP addresses.", "why": "Raw/staging tables and IPs are outside the marts."}
+]
