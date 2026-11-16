@@ -25,7 +25,7 @@ jobs:
         run: make test
       - name: make build (generate + dbt build, RU-05)
         run: make build
-      - name: warehouse tests: runner, hand-written SQL, ask pipeline, eval (RU-01, RU-02, RU-03)
+      - name: warehouse tests - runner, hand-written SQL, ask pipeline, eval (RU-01, RU-02, RU-03)
         run: make test-warehouse
       - name: golden-set eval on recorded drafts (no live LLM, D-29)
         run: make eval
