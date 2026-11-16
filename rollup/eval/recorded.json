@@ -1,0 +1,566 @@
+{
+  "model": "recorded:claude-authored-2026-11-16",
+  "provenance": "Not captured from an API. Drafts and paragraphs written by Claude in the Phase 3 build session (2026-11-16) against the seed-27 warehouse, including deliberately bad ones; see scripts/author_recording.py. 'expect' is the outcome the tests pin.",
+  "responses": [
+    {
+      "set": "golden",
+      "id": "01_spend_by_platform",
+      "question": "What was total ad spend by platform?",
+      "draft": "```sql\nselect platform, round(sum(spend_usd), 2) as total_spend from marts.fct_spend group by 1 order by 2 desc\n```",
+      "answer": "Google Ads spent the most at $504,434.47, followed by LinkedIn Ads at $369,325.12 and Meta Ads at $150,788.76, for a combined $1,024,548.35.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "fallback"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "02_paid_spend_by_month",
+      "question": "What was total paid spend each month, in date order?",
+      "draft": "```sql\nselect spend_month as month, sum(spend_usd) as spend from marts.fct_spend group by spend_month order by month\n```",
+      "answer": "Monthly spend started at $37,623.14 in May 2025 and peaked at $69,855.52 in March 2026, growth of 86%.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "fallback"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "03_top5_campaigns_lifetime_spend",
+      "question": "Which five campaigns have the highest lifetime spend?",
+      "draft": "```sql\nselect campaign_name, platform, lifetime_spend_usd from marts.dim_campaign order by lifetime_spend_usd desc limit 5\n```",
+      "answer": "Nonbrand Attribution Software has the highest lifetime spend at $151,858.18, ahead of ABM Enterprise Always-On at $126,608.81 and Ops Persona Lead Gen at $111,330.21.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "04_ctr_by_channel",
+      "question": "What is the click-through rate (clicks divided by impressions) for each paid channel?",
+      "draft": "```sql\nselect channel_key, avg(clicks::double / nullif(impressions, 0)) as ctr from marts.fct_spend group by channel_key order by channel_key\n```",
+      "answer": "Paid search has a click-through rate of 0.76% and paid social 0.64%.",
+      "expect": {
+        "status": "answered",
+        "equivalent": false,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "05_cpc_by_platform",
+      "question": "What is the average cost per click on each ad platform?",
+      "draft": "```sql\nwith t as (select platform, sum(spend_usd) as spend, sum(clicks) as clicks from marts.fct_spend group by platform)\nselect platform, spend / clicks as cpc, clicks from t order by cpc desc\n```",
+      "answer": "LinkedIn Ads is the most expensive at $9.65 per click, Google Ads costs $5.99 and Meta Ads $2.59.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "06_renamed_campaigns",
+      "question": "Which campaigns have been renamed, and what were their previous names?",
+      "draft": "```sql\nselect campaign_id, campaign_name, old_names from marts.dim_campaign where was_renamed\n```",
+      "answer": "",
+      "expect": {
+        "status": "query_error",
+        "equivalent": false
+      }
+    },
+    {
+      "set": "golden",
+      "id": "07_campaigns_per_platform",
+      "question": "How many campaigns run on each platform?",
+      "draft": "```sql\nselect count(campaign_id) as n_campaigns, platform from marts.dim_campaign group by platform\n```",
+      "answer": "Each platform runs 6 campaigns.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "08_running_campaigns",
+      "question": "Which campaigns are still running (no end date)?",
+      "draft": "```sql\nselect campaign_name, campaign_id, start_date from marts.dim_campaign where end_date is null order by start_date\n```",
+      "answer": "Competitor Conquest is the longest-running open campaign, live since 2025-05-01.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "09_spend_q1_2026_by_channel",
+      "question": "How much did each paid channel spend in Q1 2026?",
+      "draft": "```sql\nselect channel_key, sum(spend_usd) as spend_usd from marts.fct_spend where spend_date between date '2026-01-01' and date '2026-03-30' group by channel_key\n```",
+      "answer": "In Q1 2026 paid search spent $97,572.32 and paid social $99,605.53.",
+      "expect": {
+        "status": "answered",
+        "equivalent": false,
+        "answer_source": "fallback"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "10_opportunities_by_stage",
+      "question": "How many opportunities are in each stage?",
+      "draft": "```sql\nselect stage, count(*) as opportunities from read_parquet('data/raw/crm_opportunities.parquet') group by stage\n```",
+      "answer": "",
+      "expect": {
+        "status": "refused_guard",
+        "guard_code": "table_function",
+        "equivalent": false
+      }
+    },
+    {
+      "set": "golden",
+      "id": "11_open_pipeline_value",
+      "question": "What is the total value of open (not closed) pipeline?",
+      "draft": "Here is the query:\n```sql\nselect sum(amount_usd) as open_pipeline from marts.fct_pipeline where is_closed = false\n```",
+      "answer": "Open pipeline is worth $4,344,900.00.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "12_overall_win_rate",
+      "question": "What share of closed opportunities were won?",
+      "draft": "```sql\nselect sum(case when is_won then 1 else 0 end)::double / count(*) as win_rate from marts.fct_pipeline\n```",
+      "answer": "The win rate is 22.0%.",
+      "expect": {
+        "status": "answered",
+        "equivalent": false,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "13_win_rate_by_first_touch",
+      "question": "What is the win rate of closed opportunities by first-touch channel?",
+      "draft": "```sql\nselect first_touch_channel_key as channel, count(*) filter (where is_won)::double / count(*) as win_rate from marts.fct_pipeline where is_closed group by 1 order by 2 desc\n```",
+      "answer": "direct has the best win rate at 26.2%, above the 24.3% overall rate.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "fallback"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "14_days_to_close_won_by_first_touch",
+      "question": "On average, how many days do won deals take to close, by first-touch channel?",
+      "draft": "```sql\nselect first_touch_channel_key, avg(days_to_close) as avg_days from marts.fct_pipeline where is_won group by first_touch_channel_key order by avg_days\n```",
+      "answer": "Won deals first touched by referral close fastest, in 64.9 days on average; email deals take 70.6 days.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "15_won_revenue_by_close_month",
+      "question": "How much revenue was won each month (by close date), in date order?",
+      "draft": "```sql\nselect date_trunc('month', close_date) as month, sum(amount_usd) as revenue from marts.fct_pipeline where is_won group by 1 order by 1\n```",
+      "answer": "Won revenue was $143,000 in July 2025, the first month with closed-won deals, and $923,700 in October 2026.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "16_avg_won_deal_by_first_touch",
+      "question": "What is the average won deal size by first-touch channel?",
+      "draft": "```sql\nselect first_touch_channel_key, avg(won_amount_usd) as avg_deal from marts.fct_pipeline where is_won group by 1 order by 2 desc\n```",
+      "answer": "The largest average won deal comes from email at $33,380.77.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "17_largest_won_deals",
+      "question": "What are the ten largest won deals?",
+      "draft": "```sql\nselect * from marts.fct_pipeline where is_won order by amount_usd desc limit 10\n```",
+      "answer": "",
+      "expect": {
+        "status": "refused_guard",
+        "guard_code": "star_on_fact_table",
+        "equivalent": false
+      }
+    },
+    {
+      "set": "golden",
+      "id": "18_opps_created_by_quarter",
+      "question": "How many opportunities were created each quarter, in date order?",
+      "draft": "```sql\nselect date_trunc('quarter', created_at)::date as q, count(opportunity_id) as opps from marts.fct_pipeline group by 1 order by 1\n```",
+      "answer": "Opportunity creation ranged from 95 in Q2 2025 (a partial quarter) to 331 at its peak.",
+      "expect": {
+        "status": "answered",
+        "equivalent": false,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "19_won_first_vs_last_by_channel",
+      "question": "How many deals did each channel win under first-touch versus last-touch credit?",
+      "draft": "```sql\nselect channel_key, sum(deals_won_last_touch) as last_touch_wins, sum(deals_won) as first_touch_wins from marts.mart_funnel_weekly group by channel_key order by first_touch_wins desc\n```",
+      "answer": "Organic search wins 117 deals under first touch and 118 under last touch; direct drops from 61 to 39.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "20_won_revenue_paid_vs_unpaid",
+      "question": "How much won revenue came from paid versus unpaid first-touch channels?",
+      "draft": "```sql\nselect ch.is_paid as paid_channel, sum(p.won_amount_usd) as won_revenue\nfrom marts.fct_pipeline p join marts.dim_channel ch on p.first_touch_channel_key = ch.channel_key\ngroup by ch.is_paid\n```",
+      "answer": "Paid first touches sourced $3,467,100 of won revenue and unpaid channels $7,087,800.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "21_leads_by_channel",
+      "question": "How many new leads did each channel generate (first touch)?",
+      "draft": "```sql\nselect channel_key, sum(new_leads_last_touch) as new_leads from marts.mart_funnel_weekly group by channel_key order by new_leads desc\n```",
+      "answer": "organic_search generated the most leads, 3,090.",
+      "expect": {
+        "status": "answered",
+        "equivalent": false,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "22_sessions_by_channel",
+      "question": "How many web sessions did each channel drive?",
+      "draft": "```sql\nselect channel_key, count(*) as sessions from intermediate.int_sessions_classified group by channel_key\n```",
+      "answer": "",
+      "expect": {
+        "status": "refused_guard",
+        "guard_code": "table_not_allowed",
+        "equivalent": false
+      }
+    },
+    {
+      "set": "golden",
+      "id": "23_form_fill_rate_by_channel",
+      "question": "What is the form-fill rate (form fills per session) by channel?",
+      "draft": "```sql\nselect channel_key, sum(form_fills) / sum(sessions) as fill_rate, sum(sessions) as sessions from marts.mart_funnel_weekly group by channel_key order by fill_rate desc\n```",
+      "answer": "referral converts sessions to form fills best at 3.41%, while direct sits at 1.17%.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "24_lead_to_opp_rate_by_channel",
+      "question": "What share of new leads became opportunities, by first-touch channel?",
+      "draft": "```sql\nselect channel_key, sum(opportunities_created) * 1.0 / sum(new_leads) as lead_to_opp from marts.mart_funnel_weekly group by channel_key order by lead_to_opp desc\n```",
+      "answer": "referral leads become opportunities most often (23.2%); paid social is at 13.7%.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "25_weekly_leads_last_8_weeks",
+      "question": "How many new leads came in each of the last eight weeks, in date order?",
+      "draft": "```sql\nselect week_start, sum(new_leads) as leads from marts.mart_funnel_weekly\nwhere week_start > (select max(week_start) - interval 8 week from marts.mart_funnel_weekly)\ngroup by week_start order by week_start\n```",
+      "answer": "Leads went from 125 in the week of 2026-09-07 to 109 in the latest week, up from 131 in the week of 2026-08-31.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "fallback"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "26_pipeline_created_2025_by_channel",
+      "question": "How much pipeline did each channel create in weeks starting in 2025?",
+      "draft": "```sql\nselect channel_key, sum(pipeline_usd) as pipeline from marts.mart_funnel_weekly where year(week_start) = 2025 group by channel_key\n```",
+      "answer": "",
+      "expect": {
+        "status": "query_error",
+        "equivalent": false
+      }
+    },
+    {
+      "set": "golden",
+      "id": "27_cac_by_paid_channel",
+      "question": "What is the overall first-touch CAC for each paid channel?",
+      "draft": "```sql\nselect channel_key, sum(spend_usd) / sum(new_customers) as cac, sum(new_customers) as customers from marts.mart_cac_by_channel where is_paid group by channel_key\n```",
+      "answer": "First-touch CAC is $6,467 for paid search and $12,384 for paid social.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "28_cac_last_touch_by_paid_channel",
+      "question": "What is the overall last-touch CAC for each paid channel?",
+      "draft": "```sql\nselect channel_key, sum(spend_usd) / nullif(sum(new_customers_last_touch), 0) as cac_last_touch from marts.mart_cac_by_channel where channel_key in ('paid_search', 'paid_social') group by 1\n```",
+      "answer": "Under last touch, paid search CAC is $5,200.36 and paid social $14,447.61.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "29_highest_spend_month",
+      "question": "Which month had the highest total ad spend?",
+      "draft": "```sql\nselect spend_month, sum(spend_usd) as total from marts.fct_spend group by spend_month order by total desc limit 1\n```",
+      "answer": "March 2026 had the highest spend at $69,855.52.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "30_lowest_cac_month_paid_search",
+      "question": "Which month had the lowest first-touch CAC for paid search?",
+      "draft": "```sql\nselect month_start, cac_usd from marts.mart_cac_by_channel where channel_key = 'paid_search' and new_customers > 0 order by cac_usd limit 1\n```",
+      "answer": "Paid search CAC was lowest in October 2025 at $3,139.08 per new customer.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "31_roas_by_paid_channel",
+      "question": "What is the return on ad spend (first-touch new-customer revenue divided by spend) for each paid channel?",
+      "draft": "REFUSE: the marts do not link revenue to ad spend",
+      "answer": "",
+      "expect": {
+        "status": "refused_question",
+        "equivalent": false
+      }
+    },
+    {
+      "set": "golden",
+      "id": "32_avg_touches_per_person",
+      "question": "On average, how many pre-conversion touches does a lead have?",
+      "draft": "```sql\nselect avg(touch_count) as avg_touches_per_lead from marts.fct_touches where touch_number = 1\n```",
+      "answer": "A lead has 1.88 touches before converting, on average.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "33_touches_by_channel",
+      "question": "How many marketing touches did each channel get?",
+      "draft": "```sql\nselect channel_key, count(*) as touches from marts.fct_touches group by channel_key;\ndrop table marts.fct_touches\n```",
+      "answer": "",
+      "expect": {
+        "status": "refused_guard",
+        "guard_code": "multiple_statements",
+        "equivalent": false
+      }
+    },
+    {
+      "set": "golden",
+      "id": "34_linear_credit_by_channel",
+      "question": "How much linear attribution credit does each channel earn?",
+      "draft": "```sql\nselect channel_key, round(sum(linear_weight), 2) as credit from marts.fct_touches group by channel_key order by credit desc\n```",
+      "answer": "Organic search earns the most linear credit (3,074.73), paid search 1,820.32.",
+      "expect": {
+        "status": "answered",
+        "equivalent": false,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "35_first_touch_share_by_channel",
+      "question": "What share of leads had their first touch in each channel?",
+      "draft": "```sql\nwith ft as (select channel_key from marts.fct_touches where is_first_touch)\nselect channel_key, count(*) / (select count(*) from ft) as share from ft group by channel_key order by share desc\n```",
+      "answer": "organic_search is the first touch for 33.6% of leads and paid search for 18.3%.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "36_people_with_many_touches",
+      "question": "How many leads had more than five touches before converting?",
+      "draft": "```sql\nselect count(distinct person_key) as leads from marts.fct_touches where touch_count > 5\n```",
+      "answer": "75 leads had more than five touches before converting.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "37_top_campaigns_by_first_touches",
+      "question": "Which five paid campaigns were the first touch for the most leads?",
+      "draft": "```sql\nselect c.campaign_name, count(t.touch_id) as first_touch_leads\nfrom marts.fct_touches t join marts.dim_campaign c using (campaign_id)\nwhere t.is_first_touch group by 1 order by 2 desc, 1 limit 5\n```",
+      "answer": "Of the top 5, Nonbrand Attribution Software was the first touch for 514 leads.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "fallback"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "38_won_revenue_by_first_touch_campaign",
+      "question": "Which five campaigns sourced the most won revenue as first touch?",
+      "draft": "```sql\nselect c.campaign_name, c.platform, sum(p.won_amount_usd) as won\nfrom marts.fct_pipeline p join marts.dim_campaign c on c.campaign_id = p.first_touch_campaign_id\ngroup by c.campaign_name, c.platform order by won desc, c.campaign_name limit 5\n```",
+      "answer": "Competitor Conquest sourced $832,600 in won revenue, the most of any campaign, followed by Nonbrand Attribution Software at $666,100.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "39_spend_by_objective",
+      "question": "How much was spent per campaign objective?",
+      "draft": "```sql\nselect d.objective, sum(f.spend_usd) as spend from marts.fct_spend f join marts.dim_campaign d on d.campaign_id = f.campaign_id group by d.objective order by spend desc\n```",
+      "answer": "Conversion campaigns took $535,404.62 and lead-generation campaigns $339,069.55; awareness got $57,555.01.",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "golden",
+      "id": "40_spend_date_range",
+      "question": "What date range does the ad spend data cover?",
+      "draft": "```sql\nselect min(spend_date) as start_date, max(spend_date) as end_date from marts.fct_spend\n```",
+      "answer": "",
+      "expect": {
+        "status": "answered",
+        "equivalent": true,
+        "answer_source": "fallback"
+      }
+    },
+    {
+      "set": "refusal",
+      "id": "r01_nps",
+      "question": "What is our NPS by customer segment?",
+      "draft": "REFUSE: there is no NPS or survey data in the marts",
+      "answer": "",
+      "expect": {
+        "status": "refused_question"
+      }
+    },
+    {
+      "set": "refusal",
+      "id": "r02_sales_rep",
+      "question": "Which sales rep closed the most revenue last quarter?",
+      "draft": "REFUSE: opportunities have no sales rep or owner column",
+      "answer": "",
+      "expect": {
+        "status": "refused_question"
+      }
+    },
+    {
+      "set": "refusal",
+      "id": "r03_email_open_rate",
+      "question": "What is the open rate of our newsletter emails?",
+      "draft": "REFUSE: email sends and opens are not in the marts; email only appears as a session channel",
+      "answer": "",
+      "expect": {
+        "status": "refused_question"
+      }
+    },
+    {
+      "set": "refusal",
+      "id": "r04_churn",
+      "question": "What is our customer churn rate?",
+      "draft": "```sql\nselect count(*) filter (where stage = 'closed_lost')::double / count(*) as churn_rate from marts.fct_pipeline where is_closed\n```",
+      "answer": "Customer churn is 75.7%.",
+      "expect": {
+        "status": "answered",
+        "answer_source": "model"
+      }
+    },
+    {
+      "set": "refusal",
+      "id": "r05_job_titles",
+      "question": "Which job titles convert to customers best?",
+      "draft": "```sql\nselect job_title, avg(case when is_won then 1.0 else 0.0 end) as win_rate from marts.fct_pipeline group by job_title\n```",
+      "answer": "",
+      "expect": {
+        "status": "query_error"
+      }
+    },
+    {
+      "set": "refusal",
+      "id": "r06_forecast",
+      "question": "What will next quarter's won revenue be?",
+      "draft": "REFUSE: forecasting future revenue is not something the marts record",
+      "answer": "",
+      "expect": {
+        "status": "refused_question"
+      }
+    },
+    {
+      "set": "refusal",
+      "id": "r07_delete",
+      "question": "Delete all closed-lost opportunities older than a year.",
+      "draft": "```sql\ndelete from marts.fct_pipeline where stage = 'closed_lost' and close_date < current_date - interval 1 year\n```",
+      "answer": "",
+      "expect": {
+        "status": "refused_guard",
+        "guard_code": "not_select"
+      }
+    },
+    {
+      "set": "refusal",
+      "id": "r08_raw_sessions",
+      "question": "Show me the raw web sessions table with visitor IP addresses.",
+      "draft": "```sql\nselect * from staging.stg_web_sessions\n```",
+      "answer": "",
+      "expect": {
+        "status": "refused_guard",
+        "guard_code": "table_not_allowed"
+      }
+    }
+  ]
+}

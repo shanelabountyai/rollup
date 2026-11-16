@@ -17,16 +17,19 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["ruff>=0.6", "mypy>=1.11", "pytest>=8", "hypothesis>=6.100"]
+# Optional live drafting model (owner hand step, D-36). Never installed or called in CI.
+live = ["anthropic>=0.40"]
 
 [build-system]
 requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["rollup", "rollup.queries"]
+packages = ["rollup", "rollup.queries", "rollup.eval"]
 
 [tool.setuptools.package-data]
 "rollup.queries" = ["*.sql"]
+"rollup.eval" = ["golden/*.sql", "*.json"]
 
 [tool.ruff]
 line-length = 120
@@ -40,7 +43,7 @@ select = ["E", "F", "I", "B", "UP", "SIM", "RUF"]
 python_version = "3.12"
 strict = true
 ignore_missing_imports = true
-files = ["rollup", "tests"]
+files = ["rollup", "tests", "scripts"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

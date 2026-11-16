@@ -35,3 +35,10 @@ def warehouse_db(repo_root: Path) -> Path:
     if not path.exists():
         pytest.fail(f"{path} not found: run `make build` before `make test-warehouse`")
     return path
+
+
+@pytest.fixture(autouse=True)
+def _no_live_llm(monkeypatch: pytest.MonkeyPatch) -> None:
+    """No test may reach a live model (D-29): strip any key or model id from the environment."""
+    for var in ("ANTHROPIC_API_KEY", "ROLLUP_LLM_MODEL"):
+        monkeypatch.delenv(var, raising=False)
