@@ -3,7 +3,7 @@ name: ci
 on:
   pull_request:
   push:
-    branches: [main, kickoff, phase-2]
+    branches: [main, kickoff, phase-2, phase-3]
 
 jobs:
   ci:
@@ -21,12 +21,14 @@ jobs:
         run: make lint
       - name: mypy
         run: make typecheck
-      - name: pytest (RU-04 reproducibility, guard unit + property tests)
+      - name: pytest (RU-04, guard + validator + equivalence unit/property tests)
         run: make test
       - name: make build (generate + dbt build, RU-05)
         run: make build
-      - name: guarded runner + hand-written SQL against the warehouse (RU-01, RU-02, timeout)
+      - name: warehouse tests: runner, hand-written SQL, ask pipeline, eval (RU-01, RU-02, RU-03)
         run: make test-warehouse
+      - name: golden-set eval on recorded drafts (no live LLM, D-29)
+        run: make eval
       - name: dbt docs generate
         run: make docs
       - name: defect mutation tests
