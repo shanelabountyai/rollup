@@ -11,17 +11,22 @@ dependencies = [
     "duckdb>=1.1",
     "dbt-core>=1.10,<1.13",
     "dbt-duckdb>=1.9",
+    # Pinned exactly: the guards' safety depends on how sqlglot parses DuckDB SQL (D-22).
+    "sqlglot==30.31.0",
 ]
 
 [project.optional-dependencies]
-dev = ["ruff>=0.6", "mypy>=1.11", "pytest>=8"]
+dev = ["ruff>=0.6", "mypy>=1.11", "pytest>=8", "hypothesis>=6.100"]
 
 [build-system]
 requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["rollup"]
+packages = ["rollup", "rollup.queries"]
+
+[tool.setuptools.package-data]
+"rollup.queries" = ["*.sql"]
 
 [tool.ruff]
 line-length = 120
@@ -39,5 +44,8 @@ files = ["rollup", "tests"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
-markers = ["mutation: slow tests that run dbt with a defect fix switched off"]
-addopts = "-m 'not mutation'"
+markers = [
+    "mutation: slow tests that run dbt with a defect fix switched off",
+    "warehouse: tests that need the built DuckDB warehouse (run after `make build` via `make test-warehouse`)",
+]
+addopts = "-m 'not mutation and not warehouse'"
