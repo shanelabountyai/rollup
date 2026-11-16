@@ -36,13 +36,28 @@ errors or times out.
 
 The model sits behind `rollup.llm.DraftModel`. The default `RecordedModel` replays `rollup/eval/recorded.json` and
 needs no network. Those responses were written in-session, including deliberately bad ones (D-37). An optional live
-adapter exists (`pip install -e '.[live]'`, `ANTHROPIC_API_KEY`, `ROLLUP_LLM_MODEL`, `--model live`). It has not
-been run yet.
+adapter exists (`pip install -e '.[live]'`, `ANTHROPIC_API_KEY`, `ROLLUP_LLM_MODEL`, `--model live`). It was run
+once by the owner on his Mac (see below).
 
 **Eval:** `make eval` scores 40 golden questions by result-set equivalence against hand-written reference SQL
 (`rollup/eval/golden/`), plus 8 unanswerable questions. It writes `data/eval/run.json` for Yardstick (#26). On the
 recorded drafts it scores 27/40 golden and 7/8 refusals. **These numbers measure the pipeline on recorded drafts,
 not a live model.** `--model reference` must score 40/40.
+
+**One live run (2026-11-16, `claude-sonnet-5-5`, seed-27 warehouse, before D-38/D-39):**
+
+| | Recorded drafts | Live run |
+|---|---|---|
+| Golden, result-set equivalent | 27/40 | **39/40** |
+| Refusal set, no numbers shown | 7/8 | **8/8** (all refused by the model) |
+| Drafts refused by a guard | 7 | 0 |
+| Model paragraphs rejected by RU-03 | 7 | 5 (fallback shown) |
+| Invariant failures / DB changed | 0 / no | 0 / no |
+
+This is a single run, not a benchmark. The one miss (#20) used `mart_cac_by_channel`, whose description overstated
+its coverage; the description is now corrected (D-39). Three of the five RU-03 rejections only restated the question
+(`Q1 2026`, `2025`, "5 touches") and are now allowed (D-38). The other two added rounded ranges that are not in the
+result and still fail by design. The run file is not committed.
 
 DuckDB file: `data/rollup.duckdb`. Schemas: `staging`, `intermediate`, `marts`.
 

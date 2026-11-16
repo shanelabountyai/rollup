@@ -173,3 +173,57 @@ def test_any_number_not_in_the_result_is_rejected(res: tuple[list[str], list[tup
     shown = f"{extra:,.2f}"
     paragraph = fallback_answer(cols, rows) + f" The total was {shown}."
     assert not validate_answer(paragraph, cols, rows).ok
+
+
+# --- D-38: restating the question is allowed; invented numbers and ranges are not -------------------------------
+# Cases taken from the first live Sonnet run (2026-11-16), where RU-03 rejected these paragraphs.
+
+Q_COLS = ["channel_key", "channel_name", "spend_usd"]
+Q_ROWS: list[tuple[Any, ...]] = [
+    ("paid_social", "Paid social", Decimal("100737.35")),
+    ("paid_search", "Paid search", Decimal("98920.87")),
+]
+
+
+def test_question_quarter_may_be_restated() -> None:
+    q = "How much did each paid channel spend in Q1 2026?"
+    p = "In Q1 2026, Paid social spent about $100,737 and Paid search spent about $98,921."
+    assert not validate_answer(p, Q_COLS, Q_ROWS).ok  # no date cell: rejected without the question
+    assert validate_answer(p, Q_COLS, Q_ROWS, q).ok
+
+
+def test_question_year_may_be_restated() -> None:
+    q = "How much pipeline did each channel create in weeks starting in 2025?"
+    p = "Paid social created the most pipeline in weeks starting in 2025, at about $100,737."
+    assert validate_answer(p, Q_COLS, Q_ROWS, q).ok
+
+
+def test_question_number_word_may_be_restated_as_digit() -> None:
+    q = "How many leads had more than five touches before converting?"
+    p = "75 distinct leads had more than 5 touches."
+    assert not validate_answer(p, ["leads"], [(75,)]).ok
+    assert validate_answer(p, ["leads"], [(75,)], q).ok
+
+
+def test_question_does_not_allow_other_dates_or_numbers() -> None:
+    q = "How much did each paid channel spend in Q1 2026?"
+    assert not validate_answer("In Q2 2026, Paid social spent $100,737.35.", Q_COLS, Q_ROWS, q).ok
+    assert not validate_answer("Paid social spent $100,737.35, up 7% on Q1 2026.", Q_COLS, Q_ROWS, q).ok
+
+
+def test_invented_ranges_still_fail_even_with_question() -> None:
+    q = "How much revenue was won each month (by close date), in date order?"
+    cols, rows = (
+        ["month_start", "won_revenue_usd"],
+        [(dt.date(2025, 7, 1), Decimal("143000")), (dt.date(2025, 8, 1), Decimal("862200"))],
+    )
+    p = "Won revenue ranged from roughly $500,000 to $900,000 per month."
+    report = validate_answer(p, cols, rows, q)
+    assert not report.ok
+    assert "number '500000' is not in the result" in report.violations
+
+
+def test_scaled_or_percent_question_numbers_are_not_reused() -> None:
+    q = "Which channels had more than 5 deals?"
+    assert not validate_answer("Paid social spent 5k.", Q_COLS, Q_ROWS, q).ok
+    assert not validate_answer("Paid social grew 5%.", Q_COLS, Q_ROWS, q).ok

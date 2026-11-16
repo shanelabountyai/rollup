@@ -31,9 +31,9 @@ PINNED_SUMMARY = {
     "refusal_correct": 7,
     "refusal_status_counts": {"answered": 1, "query_error": 1, "refused_guard": 2, "refused_question": 4},
     "answers_shown": 34,
-    "answers_from_model": 27,
-    "answers_from_fallback": 7,
-    "model_paragraphs_rejected_ru03": 7,
+    "answers_from_model": 29,
+    "answers_from_fallback": 5,
+    "model_paragraphs_rejected_ru03": 5,
     "guard_refusals_by_code": {
         "multiple_statements": 1,
         "not_select": 1,

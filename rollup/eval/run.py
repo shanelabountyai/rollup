@@ -43,7 +43,7 @@ def _jsonable(v: Any) -> Any:
 def _invariant_failures(r: AskResult) -> list[str]:
     out: list[str] = []
     if r.answered:
-        if not validate_answer(r.answer, r.columns, r.rows).ok:
+        if not validate_answer(r.answer, r.columns, r.rows, r.question).ok:
             out.append("RU-03: shown answer has a number not in the result")
     else:
         if re.search(r"\d", r.answer):

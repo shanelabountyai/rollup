@@ -14,6 +14,11 @@ Checking order, on a copy of the paragraph:
    ``k``/``M``/``B`` (and ``thousand``/``million``/``billion``) scale the token. A ``%`` token matches a cell as a
    ratio x 100 or as a value already in percent. Signs are ignored (``fell 12%`` may cite ``-12``).
 
+5. Restating the question is allowed (D-38): when the caller passes ``question``, a date expression the question
+   itself contains (``Q1 2026``, ``2025``) and a number the question itself states (``more than five touches`` ->
+   ``5``; digits or the words one..twenty) are accepted even if no cell holds them. Numbers or ranges the model
+   invents (``roughly $500,000 to $900,000``) still fail.
+
 Derived numbers (sums, differences, row counts) are not in the result, so they fail by design. Numbers written as
 words are not detected (a known limit, stated in the PR). ``fallback_answer`` builds a paragraph only from cells and
 always validates.
@@ -55,6 +60,56 @@ _SUFFIX = re.compile(
     r"\s*(%|percent\b|pct\b|k\b|m\b|mm\b|b\b|bn\b|thousand\b|million\b|billion\b|st\b|nd\b|rd\b|th\b)", re.IGNORECASE
 )
 _SCALES = {"k": 3, "thousand": 3, "m": 6, "mm": 6, "million": 6, "b": 9, "bn": 9, "billion": 9}
+
+
+_NUMBER_WORDS = (
+    "zero one two three four five six seven eight nine ten eleven twelve thirteen fourteen fifteen sixteen "
+    "seventeen eighteen nineteen twenty"
+)
+_WORD_NUMBERS = {w: i for i, w in enumerate(_NUMBER_WORDS.split())}
+
+
+def _norm_date(text: str) -> str:
+    return re.sub(r"[^0-9a-z]", "", text.lower())
+
+
+@dataclass(frozen=True)
+class _Question:
+    """Date expressions and numbers stated in the user's question (D-38)."""
+
+    dates: frozenset[str]
+    numbers: frozenset[Decimal]
+
+
+def _question_tokens(question: str | None) -> _Question:
+    if not question:
+        return _Question(frozenset(), frozenset())
+    dates: set[str] = set()
+    for pat in (
+        _ISO_DATETIME,
+        _US_DATE,
+        _MONTH_DAY_YEAR,
+        _DAY_MONTH_YEAR,
+        _ISO_MONTH,
+        _MONTH_YEAR,
+        _QUARTER_YEAR,
+        _QUARTER,
+        _YEAR,
+    ):
+        for m in pat.finditer(question):
+            dates.add(_norm_date(m.group(0)))
+    numbers: set[Decimal] = set()
+    for m in _NUMBER.finditer(question):
+        raw = m.group(0).rstrip(",")
+        for tok in _tokens(raw):
+            try:
+                numbers.add(Decimal(tok))
+            except InvalidOperation:
+                continue
+    for w in re.findall(r"[a-z]+", question.lower()):
+        if w in _WORD_NUMBERS:
+            numbers.add(Decimal(_WORD_NUMBERS[w]))
+    return _Question(frozenset(dates), frozenset(numbers))
 
 
 @dataclass
@@ -139,7 +194,7 @@ def _safe_date(y: int, m: int, d: int) -> dt.date | None:
         return None
 
 
-def _check_dates(text: str, pool: _Pool, report: ValidationReport) -> str:
+def _check_dates(text: str, pool: _Pool, report: ValidationReport, q: _Question) -> str:
     def has_month(y: int, m: int) -> bool:
         return any(d.year == y and d.month == m for d in pool.dates)
 
@@ -151,7 +206,7 @@ def _check_dates(text: str, pool: _Pool, report: ValidationReport) -> str:
         for m in list(pattern.finditer(text)):
             if not m.group(0).strip():
                 continue
-            ok = judge(m)
+            ok = judge(m) or _norm_date(m.group(0)) in q.dates
             (report.checked if ok else report.violations).append(
                 m.group(0) if ok else f"date {m.group(0)!r} is not in the result"
             )
@@ -228,7 +283,7 @@ def _tokens(raw: str) -> list[str]:
     return [p for p in raw.split(",") if p]
 
 
-def _check_numbers(text: str, pool: _Pool, report: ValidationReport) -> None:
+def _check_numbers(text: str, pool: _Pool, report: ValidationReport, q: _Question) -> None:
     for m in _NUMBER.finditer(text):
         raw = m.group(0).rstrip(",")
         suffix_m = _SUFFIX.match(text, m.start() + len(raw))
@@ -241,18 +296,27 @@ def _check_numbers(text: str, pool: _Pool, report: ValidationReport) -> None:
             shown = tok + (suffix if last and suffix not in {"st", "nd", "rd", "th"} else "")
             if _match_number(Decimal(tok), decimals, scale, percent, pool):
                 report.checked.append(shown)
+            elif not scale and not percent and Decimal(tok) in q.numbers:
+                report.checked.append(shown)  # restates a number from the question (D-38)
             else:
                 report.violations.append(f"number {shown!r} is not in the result")
 
 
-def validate_answer(paragraph: str, columns: Sequence[str], rows: Sequence[Sequence[Any]]) -> ValidationReport:
-    """Check one answer paragraph against the result it describes (RU-03)."""
+def validate_answer(
+    paragraph: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], question: str | None = None
+) -> ValidationReport:
+    """Check one answer paragraph against the result it describes (RU-03).
+
+    ``question`` is optional; when given, dates and numbers the question itself states may be restated (D-38).
+    """
     with localcontext() as ctx:
         ctx.prec = 800  # exact for any finite double and any DECIMAL(38); the default 28 digits would round
-        return _validate(paragraph, columns, rows)
+        return _validate(paragraph, columns, rows, question)
 
 
-def _validate(paragraph: str, columns: Sequence[str], rows: Sequence[Sequence[Any]]) -> ValidationReport:
+def _validate(
+    paragraph: str, columns: Sequence[str], rows: Sequence[Sequence[Any]], question: str | None = None
+) -> ValidationReport:
     report = ValidationReport(ok=False)
     if not paragraph or not paragraph.strip():
         report.violations.append("answer is empty")
@@ -260,9 +324,10 @@ def _validate(paragraph: str, columns: Sequence[str], rows: Sequence[Sequence[An
     if re.search(r"\n\s*\n", paragraph.strip()):
         report.violations.append("answer is more than one paragraph")
     pool = _build_pool(columns, rows)
+    q = _question_tokens(question)
     text = _remove_texts(paragraph, pool)
-    text = _check_dates(text, pool, report)
-    _check_numbers(text, pool, report)
+    text = _check_dates(text, pool, report, q)
+    _check_numbers(text, pool, report, q)
     report.ok = not report.violations
     return report
 
