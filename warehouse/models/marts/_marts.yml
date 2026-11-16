@@ -282,7 +282,9 @@ models:
       paid spend divided by the deals closed-won in that same month (by close_date) — not a spend cohort, so a
       deal can close months after the spend that sourced it. New customers are credited by FIRST touch (D-20),
       the same model as mart_funnel_weekly; the *_last_touch columns credit the converting touch for
-      comparison. CAC only for paid channels.
+      comparison. CAC only for paid channels. Covers ONLY the months from the first to the last month with ad
+      spend: deals won outside that window are not in this mart. For all-time won revenue or deals, use
+      fct_pipeline (is_won) instead.
     data_tests:
       - unique_combination:
           arguments: {combination: [month_start, channel_key]}
@@ -303,10 +305,10 @@ models:
         description: Ad spend in USD.
         data_tests: [not_null, non_negative]
       - name: new_customers
-        description: Deals closed-won in the month whose first touch was this channel. Sums to all won deals.
+        description: Deals closed-won in the month whose first touch was this channel. Sums to all won deals closed within the mart's spend months only, not all-time (use fct_pipeline for all-time).
         data_tests: [not_null, non_negative]
       - name: new_customer_revenue_usd
-        description: Revenue from those deals (first touch).
+        description: Revenue from those deals (first touch), within the mart's spend months only; not all-time won revenue.
         data_tests: [not_null, non_negative]
       - name: cac_usd
         description: This month's paid spend / deals closed-won this month first-touched by the channel (not a spend cohort); null when not paid or no customers.

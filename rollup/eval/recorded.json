@@ -106,7 +106,7 @@
       "expect": {
         "status": "answered",
         "equivalent": false,
-        "answer_source": "fallback"
+        "answer_source": "model"
       }
     },
     {
@@ -440,7 +440,7 @@
       "expect": {
         "status": "answered",
         "equivalent": true,
-        "answer_source": "fallback"
+        "answer_source": "model"
       }
     },
     {

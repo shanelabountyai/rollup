@@ -111,7 +111,7 @@ def ask(
     except ModelUnavailable:
         paragraph = ""
     out.model_answer = paragraph
-    out.validation = validate_answer(paragraph, result.columns, result.rows)
+    out.validation = validate_answer(paragraph, result.columns, result.rows, question)
     if out.validation.ok:
         out.answer, out.answer_source = paragraph, "model"
     else:
