@@ -4,9 +4,9 @@ Marketing warehouse (dbt + DuckDB) with a safe text-to-SQL layer and a small que
 SQL, see whether the safety checks passed, get the table, a chart, and an answer that cites only numbers in the
 result.
 
-Build-log #27. Status: **Phase 4** (FastAPI + HTMX query UI, shape-based charts, this case study), on branch
-`phase-4` pending review. Phases 1–3 (generator, dbt models, guards, guarded runner, model interface, RU-03
-validator, golden-set eval) are on `main`. Everything in CI runs on **recorded** model responses; no live LLM is
+Build-log #27. Status: **Phase 4 merged** (PR #6, 2026-11-18): FastAPI + HTMX query UI, shape-based charts and
+this case study. All four PRD phases are on `main` (generator, dbt models, guards, guarded runner, model interface, RU-03
+validator, golden-set eval, UI). Everything in CI runs on **recorded** model responses; no live LLM is
 called by the build (D-29). Spec in `docs/PRD.md`, decisions in `docs/DECISIONS.md`, what's next in `NEXT.md`.
 
 **All data is synthetic**: a seeded generator invents 18 months of a fictional B2B company's ad spend, web

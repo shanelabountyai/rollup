@@ -61,4 +61,4 @@ chart rules), `make build` (RU-04/RU-05), `make test-warehouse` (Phase 2–3 tes
 
 ## Status
 
-- [ ] Gate run + PR
+- [x] Gate run + PR (#6; local `make ci` and GitHub CI green; merged 2026-11-18 after Shane's approval)
