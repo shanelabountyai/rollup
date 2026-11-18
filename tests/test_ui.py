@@ -31,6 +31,7 @@ SPEND_BY_PLATFORM = "What was total ad spend by platform?"  # recorded paragraph
 MONTHLY_SPEND = "What was total paid spend each month, in date order?"
 DELETE_Q = "Delete all closed-lost opportunities older than a year."
 NPS_Q = "What is our NPS by customer segment?"
+LOCAL = "http://127.0.0.1:8000"  # the app answers only on loopback hosts (D-50)
 TOP_FIVE = "Which five campaigns have the highest lifetime spend?"  # model paragraph passes RU-03
 
 
@@ -77,14 +78,14 @@ def test_recorded_questions_cover_both_sets() -> None:
 
 
 def test_missing_warehouse_is_a_clear_503(tmp_path: Path) -> None:
-    client = TestClient(create_app(RecordedModel(), db_path=tmp_path / "nope.duckdb"))
+    client = TestClient(create_app(RecordedModel(), db_path=tmp_path / "nope.duckdb"), base_url=LOCAL)
     r = client.post("/ask", data={"question": SPEND_BY_PLATFORM})
     assert r.status_code == 503
     assert "make build" in r.text
 
 
 def test_empty_and_overlong_questions_are_rejected(tmp_path: Path) -> None:
-    client = TestClient(create_app(RecordedModel(), db_path=tmp_path / "nope.duckdb"))
+    client = TestClient(create_app(RecordedModel(), db_path=tmp_path / "nope.duckdb"), base_url=LOCAL)
     assert client.post("/ask", data={"question": "   "}).status_code == 400
     assert client.post("/ask", data={"question": "x" * 501}).status_code == 400
     # htmx only swaps 2xx, so the partial carries the error with a 200
@@ -100,7 +101,7 @@ def client(warehouse_db: Path, repo_root: Path) -> TestClient:
     app = create_app(
         RecordedModel(), db_path=warehouse_db, manifest_path=repo_root / "warehouse" / "target" / "manifest.json"
     )
-    return TestClient(app)
+    return TestClient(app, base_url=LOCAL)
 
 
 @pytest.fixture(scope="module")
@@ -309,7 +310,7 @@ def test_non_answer_reasons_show_no_numbers(warehouse_db: Path, repo_root: Path)
         db_path=warehouse_db,
         manifest_path=repo_root / "warehouse" / "target" / "manifest.json",
     )
-    c = TestClient(app)
+    c = TestClient(app, base_url=LOCAL)
     for q, status in (("q-refuse", "refused_question"), ("q-error", "query_error")):
         page = _ask(c, q)
         assert f'data-status="{status}"' in page, q
@@ -319,3 +320,36 @@ def test_non_answer_reasons_show_no_numbers(warehouse_db: Path, repo_root: Path)
         plain = html.unescape(page)
         for token in ("34.5", "1,234,567", "Could not convert string"):
             assert token not in plain, (q, token)
+
+
+# ---- local-only requests: Host and Origin checks (review S-new, D-50) ------------------------------------------
+
+
+def _local_app(tmp_path: Path) -> TestClient:
+    return TestClient(create_app(RecordedModel(), db_path=tmp_path / "nope.duckdb"), base_url=LOCAL)
+
+
+def test_foreign_host_header_is_refused(tmp_path: Path) -> None:
+    """DNS rebinding: a page on evil.example resolving to 127.0.0.1 sends Host: evil.example."""
+    c = _local_app(tmp_path)
+    assert c.get("/healthz").status_code == 200
+    assert c.get("/healthz", headers={"Host": "evil.example"}).status_code == 400
+    r = c.post("/ask", data={"question": "x"}, headers={"Host": "evil.example:8000"})
+    assert r.status_code == 400
+
+
+def test_cross_site_post_is_refused(tmp_path: Path) -> None:
+    """A form on another site can POST to 127.0.0.1 with no preflight; the browser still sends Origin."""
+    c = _local_app(tmp_path)
+    for headers in (
+        {"Origin": "https://evil.example"},
+        {"Origin": "null"},
+        {"Sec-Fetch-Site": "cross-site"},
+    ):
+        r = c.post("/ask", data={"question": SPEND_BY_PLATFORM}, headers=headers)
+        assert r.status_code == 403, headers
+        assert "result" not in r.text.lower() or "data-status" not in r.text
+    # same-origin and no-Origin (curl) posts still reach the handler (503: no warehouse here)
+    assert c.post("/ask", data={"question": "x"}, headers={"Origin": "http://127.0.0.1:8000"}).status_code == 503
+    assert c.post("/ask", data={"question": "x"}, headers={"Origin": "http://localhost:8000"}).status_code == 503
+    assert c.post("/ask", data={"question": "x"}).status_code == 503
