@@ -13,10 +13,15 @@ dependencies = [
     "dbt-duckdb>=1.9",
     # Pinned exactly: the guards' safety depends on how sqlglot parses DuckDB SQL (D-22).
     "sqlglot==30.31.0",
+    # Query UI (Phase 4, D-03/D-40). HTMX itself is vendored in rollup/ui/static, so the UI works offline.
+    "fastapi>=0.115",
+    "jinja2>=3.1",
+    "python-multipart>=0.0.9",
+    "uvicorn>=0.30",
 ]
 
 [project.optional-dependencies]
-dev = ["ruff>=0.6", "mypy>=1.11", "pytest>=8", "hypothesis>=6.100"]
+dev = ["ruff>=0.6", "mypy>=1.11", "pytest>=8", "hypothesis>=6.100", "httpx>=0.27"]  # httpx: FastAPI TestClient
 # Optional live drafting model (owner hand step, D-36). Never installed or called in CI.
 live = ["anthropic>=0.40"]
 
@@ -25,11 +30,12 @@ requires = ["setuptools>=69"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["rollup", "rollup.queries", "rollup.eval"]
+packages = ["rollup", "rollup.queries", "rollup.eval", "rollup.ui"]
 
 [tool.setuptools.package-data]
 "rollup.queries" = ["*.sql"]
 "rollup.eval" = ["golden/*.sql", "*.json"]
+"rollup.ui" = ["templates/*.html", "static/*"]
 
 [tool.ruff]
 line-length = 120
