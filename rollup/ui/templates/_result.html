@@ -1,0 +1,75 @@
+{% if error %}
+<div class="card error" data-testid="error">{{ error }}</div>
+{% elif result %}
+{% set r = result %}
+<section data-testid="result" data-status="{{ r.status }}">
+  <div class="card">
+    <h2>Question</h2>
+    <div>{{ r.question }}</div>
+    <div class="meta">Status: <span data-testid="status">{{ r.status }}</span> — {{ r.status_label }}</div>
+  </div>
+
+  <div class="card">
+    <h2>Drafted SQL</h2>
+    {% if r.draft_sql %}<pre data-testid="draft-sql">{{ r.draft_sql }}</pre>
+    {% else %}<div class="meta">No SQL was drafted.</div>{% endif %}
+  </div>
+
+  <div class="card">
+    <h2>Guards</h2>
+    {% if r.guard == "passed" %}
+      <span class="badge passed" data-testid="guard">passed</span>
+      <span class="meta">single SELECT, marts allowlist, no * on fact tables, row cap, read-only, timeout</span>
+      <div class="meta">Executed SQL (regenerated from the checked tree):</div>
+      <pre data-testid="executed-sql">{{ r.executed_sql }}</pre>
+    {% elif r.guard == "refused" %}
+      <span class="badge refused" data-testid="guard">refused</span>
+      <code data-testid="guard-code">{{ r.guard_code }}</code>
+      <div data-testid="reason">{{ r.reason }}</div>
+    {% else %}
+      <span class="badge notreached" data-testid="guard">not reached</span>
+      {% if r.reason %}<div data-testid="reason">{{ r.reason }}</div>{% endif %}
+    {% endif %}
+  </div>
+
+  {% if r.status == "answered" %}
+  <div class="card">
+    <h2>Result</h2>
+    <div class="meta" data-testid="row-meta">{{ r.rows|length }} row(s){% if r.truncated %}, truncated at the row cap{% endif %}{% if r.elapsed_ms is not none %} · {{ r.elapsed_ms }} ms{% endif %}</div>
+    <div class="tablewrap">
+      <table data-testid="result-table">
+        <thead><tr>{% for c in r.columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
+        <tbody>
+          {% for row in r.rows %}<tr>{% for v in row %}<td>{{ v }}</td>{% endfor %}</tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+  {% endif %}
+
+  <div class="card">
+    <h2>Answer</h2>
+    <p class="answer" data-testid="answer">{{ r.answer }}</p>
+    {% if r.status == "answered" %}
+      {% if r.ru03_rejected %}
+      <div class="warn" data-testid="ru03-rejected">The model's paragraph was rejected by the RU-03 validator
+        ({{ r.ru03_violation_count }} {{ "number" if r.ru03_violation_count == 1 else "numbers" }} not in the result)
+        and is not shown. The paragraph above quotes result cells only.</div>
+      {% else %}
+      <div class="meta" data-testid="answer-source">Source: {{ r.answer_source }} paragraph; every number in it is in
+        the result (RU-03).</div>
+      {% endif %}
+    {% else %}
+      <div class="meta">Refusals show no numbers.</div>
+    {% endif %}
+  </div>
+
+  {% if r.status == "answered" %}
+  <div class="card">
+    <h2>Chart</h2>
+    <div class="meta" data-testid="chart-reason" data-chart="{{ r.chart_kind }}">{{ r.chart_reason }}</div>
+    {% if r.chart_svg %}<div data-testid="chart">{{ r.chart_svg }}</div>{% endif %}
+  </div>
+  {% endif %}
+</section>
+{% endif %}
