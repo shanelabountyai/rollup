@@ -32,6 +32,16 @@ PR #6 was merged at 15:25 UTC, before this review ran (D-48). One independent re
 - Gate: `make ci` exit 0 (lint, mypy, 324 + 137 warehouse + 4 mutation tests, dbt PASS=235, eval 27/40 golden,
   7/8 refusal, unchanged).
 
+## Follow-up on owner "go" (2026-11-18)
+
+- D-49: D-31 amended: refusals show no numbers *from the data*; guard reasons (fixed strings about the drafted SQL)
+  stay visible. Page and README wording updated.
+- D-50: the UI only answers on loopback hosts and refuses cross-site POSTs (DNS rebinding, CSRF-style form posts
+  that could spend the live key). Two new tests, written failing first.
+- Still open (should-fix/nits, not done): README:99 reference RU-03 cell says "n/a" but the file says 40; all-NULL
+  numeric column chart rule (chart.py, D-42); bare 500 on DuckDB lock/IO errors; `svg_text` test helper does not
+  unescape; route-level XSS test; no CSP for vendored htmx.
+
 ## What is left / not verified
 
 - The UI has never been run against a live model. Nor has the eval since D-38/D-39 (whether D-39 fixes golden #20
