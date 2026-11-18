@@ -18,6 +18,7 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
 from dataclasses import dataclass
 from pathlib import Path
@@ -91,6 +92,32 @@ class ResultView:
     chart_svg: Markup
 
 
+_DIGIT = re.compile(r"\d")
+
+WITHHELD_REASONS = {
+    "refused_question": (
+        "The model said the marts can't answer this; its explanation contained numbers, so it is not shown."
+    ),
+    "query_error": (
+        "The database returned an error; its message contained numbers (it can quote cell values), so it is not shown."
+    ),
+    "timeout": "The query ran past the time limit and was stopped.",
+    "model_error": "The model returned no usable draft; its message contained numbers, so it is not shown.",
+}
+
+
+def shown_reason(status: str, reason: str | None) -> str | None:
+    """The reason text a non-answer page may render (D-47).
+
+    RU-03 checks only the answer. A refusal reason can be free model output (``REFUSE: ...``) and a DuckDB error can
+    quote a cell value, so a reason with any digit is replaced by a fixed message for its status. Guard reasons are
+    kept as written: they come from ``rollup.guards`` and describe the drafted SQL, which the page already shows.
+    """
+    if status == "refused_guard" or reason is None or not _DIGIT.search(reason):
+        return reason
+    return WITHHELD_REASONS.get(status, "The message contained numbers, so it is not shown.")
+
+
 def build_view(r: AskResult) -> ResultView:
     if r.executed_sql:
         guard = "passed"
@@ -111,7 +138,7 @@ def build_view(r: AskResult) -> ResultView:
         draft_sql=r.draft_sql,
         guard=guard,
         guard_code=r.guard_code,
-        reason=r.reason,
+        reason=shown_reason(r.status, r.reason),
         executed_sql=r.executed_sql,
         columns=list(r.columns),
         rows=[[fmt_cell(v) for v in row] for row in r.rows],

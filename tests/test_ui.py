@@ -10,8 +10,9 @@ from __future__ import annotations
 import hashlib
 import html
 import re
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from pathlib import Path
+from typing import Any
 
 import duckdb
 import pytest
@@ -20,7 +21,7 @@ from fastapi.testclient import TestClient
 import rollup.runner
 from rollup.ask import ask
 from rollup.guards import GuardedQuery, check_sql
-from rollup.llm import ModelUnavailable, RecordedModel
+from rollup.llm import Draft, ModelUnavailable, RecordedModel, parse_draft
 from rollup.runner import open_readonly
 from rollup.schema_context import SchemaContext, load_context
 from rollup.ui.app import create_app, recorded_questions, select_model
@@ -275,3 +276,46 @@ def test_ui_module_runs_no_sql_of_its_own() -> None:
         if isinstance(n, ast.Call)
     }
     assert not calls & {"execute", "executemany", "sql", "query", "run_sql", "execute_guarded", "check_sql"}
+
+
+class _StubModel:
+    """A model whose drafts are fixed per question: stands in for free live-model output (no network)."""
+
+    name = "stub"
+
+    def __init__(self, drafts: dict[str, str]) -> None:
+        self.drafts = drafts
+
+    def draft_sql(self, question: str, context: SchemaContext) -> Draft:
+        return parse_draft(self.drafts[question])
+
+    def write_answer(self, question: str, sql: str, columns: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
+        return ""
+
+
+@pytest.mark.warehouse
+def test_non_answer_reasons_show_no_numbers(warehouse_db: Path, repo_root: Path) -> None:
+    """D-47: a refusal or error page shows no digits anywhere it renders free text (model refusal, DuckDB error).
+
+    A live model's REFUSE text is free output, and a DuckDB error can quote a cell value; neither is checked by
+    RU-03, so the UI must not render digits from them ("Refusals show no numbers")."""
+    invented = "REFUSE: win rate is 34.5% and spend was $1,234,567"
+    leak = (
+        "```sql\nselect cast(cast(amount_usd as varchar) || 'x' as integer) as v "
+        "from marts.fct_pipeline where is_won\n```"
+    )
+    app = create_app(
+        _StubModel({"q-refuse": invented, "q-error": leak}),
+        db_path=warehouse_db,
+        manifest_path=repo_root / "warehouse" / "target" / "manifest.json",
+    )
+    c = TestClient(app)
+    for q, status in (("q-refuse", "refused_question"), ("q-error", "query_error")):
+        page = _ask(c, q)
+        assert f'data-status="{status}"' in page, q
+        reason = _text(_tag(page, "reason"))
+        assert reason, q  # the page still says why
+        assert not re.search(r"\d", reason), (q, reason)
+        plain = html.unescape(page)
+        for token in ("34.5", "1,234,567", "Could not convert string"):
+            assert token not in plain, (q, token)
