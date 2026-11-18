@@ -117,7 +117,7 @@ def ctx(warehouse_db: Path, repo_root: Path) -> SchemaContext:
 def _ask(client: TestClient, q: str, *, htmx: bool = True) -> str:
     r = client.post("/ask", data={"question": q}, headers={"HX-Request": "true"} if htmx else {})
     assert r.status_code == 200
-    return r.text
+    return str(r.text)
 
 
 @pytest.mark.warehouse
