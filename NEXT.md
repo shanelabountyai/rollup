@@ -1,7 +1,7 @@
 # Next — Rollup after Phase 4
 
-Written 2026-11-18 by an unattended Claude run. PR "Rollup Phase 4: query UI, charts, README case study" is open
-against `main` and **not merged**.
+Written 2026-11-18 by an unattended Claude run. PR #6 "Rollup Phase 4: query UI, charts, README case study" was
+approved by Shane and **merged into `main` on 2026-11-18** (merge commit 1b9b11e).
 
 ## What Phase 4 built
 
@@ -28,11 +28,10 @@ against `main` and **not merged**.
 
 ## Owner hand steps
 
-1. Review the PR (diff of `rollup/guards.py`, `rollup/runner.py`, `rollup/validator.py`, `rollup/ask.py`,
-   `rollup/eval/` against `main` should be empty).
+1. ~~Review and merge PR #6~~ (done 2026-11-18).
 2. Locally: `pip install -e '.[dev]' && make build && make ui`, open http://127.0.0.1:8000, try a few recorded
    questions (e.g. "Delete all closed-lost opportunities older than a year." for a guard refusal).
 3. Optional, with your own key: `pip install -e '.[live]'`, export `ANTHROPIC_API_KEY` and `ROLLUP_LLM_MODEL`, then
    `make ui MODEL=live`. Optionally `python -m rollup.eval.run --model live --out docs/eval/live-run.json` and commit
    the file if you want the live numbers in the case study.
-4. Merge or not.
+4. Decide whether anything follows Phase 4; the PRD's Phases line ends here.
