@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ask Rollup</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@600;700&amp;display=swap">
+<style>
+body{margin:0;background:#F7F7F4}
+a{color:#0F5E63}a:hover{color:#0A4347}
+</style>
+</helmet>
+<div style="min-height: 100%; background: #F7F7F4; color: #16181D; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.5;">
+<header style="background: #FFFFFF; border-bottom: 1px solid #D9D9D2;">
+<div style="max-width: 1120px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center;">
+<span style="display: flex; align-items: baseline; gap: 10px;"><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px;">Rollup</span><span style="font-size: 13px; color: #565B66;">Synthetic B2B company · 18 months of data</span></span>
+<nav aria-label="Main" style="display: flex; gap: 18px; font-size: 14px;"><a href="#" style="font-weight: 600; color: #16181D; text-decoration: none; border-bottom: 2px solid #0F5E63; padding: 8px 0;">Ask</a><a href="Eval.dc.html" style="color: #3E434D; text-decoration: none; padding: 8px 0;">How accurate is it? (eval)</a><a href="#" style="color: #3E434D; text-decoration: none; padding: 8px 0;">Data docs</a></nav>
+</div>
+</header>
+<main style="max-width: 1120px; margin: 0 auto; padding: 24px 24px 56px; display: flex; flex-direction: column; gap: 18px;">
+
+<form style="display: flex; flex-direction: column; gap: 10px;">
+<label for="q" style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700;">Ask a question about marketing performance</label>
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+<input id="q" type="text" value="What was our customer acquisition cost by channel last quarter?" style="flex: 1 1 480px; min-height: 52px; box-sizing: border-box; border: 1px solid #8A8F99; border-radius: 10px; padding: 0 14px; font: inherit; font-size: 17px; background: #FFFFFF;">
+<button type="button" style="min-height: 52px; padding: 0 22px; border-radius: 10px; border: none; background: #0F5E63; color: #FFFFFF; font: inherit; font-weight: 600;">Ask</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; font-size: 14px;"><span style="color: #565B66;">Try:</span><a href="#q">Spend by channel by month</a><span aria-hidden="true">·</span><a href="#q">Pipeline created last quarter</a><span aria-hidden="true">·</span><a href="#q">MQL to SQL rate by source</a></div>
+</form>
+
+<section aria-labelledby="ans" style="background: #FFFFFF; border: 1px solid #D9D9D2; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 10px;">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline;">
+<h2 id="ans" style="margin: 0; font-size: 17px;">Answer</h2>
+<span style="font-size: 13px; color: #3E434D; background: #EEEEEA; border-radius: 999px; padding: 2px 10px;">Every number below is checked against the result table</span>
+</div>
+<p style="margin: 0; font-size: 17px; line-height: 1.6;">Last quarter, events were your most expensive channel at <mark style="background: #E7F2F2; color: #0A4347; border-bottom: 2px solid #0F5E63; padding: 0 2px;">$1,500</mark> per new customer (first touch), and organic was the cheapest at <mark style="background: #E7F2F2; color: #0A4347; border-bottom: 2px solid #0F5E63; padding: 0 2px;">$200</mark>. Paid search came in at <mark style="background: #E7F2F2; color: #0A4347; border-bottom: 2px solid #0F5E63; padding: 0 2px;">$700</mark> across <mark style="background: #E7F2F2; color: #0A4347; border-bottom: 2px solid #0F5E63; padding: 0 2px;">120</mark> customers.</p>
+<span style="font-size: 13px; color: #565B66;">Hover a highlighted number to see its cell. Attribution: first touch (primary). Last touch is shown as a second column.</span>
+</section>
+
+<div style="display: flex; flex-wrap: wrap; gap: 16px; align-items: flex-start;">
+<section aria-labelledby="res" style="flex: 999 1 560px; min-width: 0; background: #FFFFFF; border: 1px solid #D9D9D2; border-radius: 14px; overflow: hidden;">
+<h2 id="res" style="margin: 0; padding: 14px 18px; font-size: 17px; border-bottom: 1px solid #E4E4DE;">Result · 4 rows · Q3 2026 (synthetic)</h2>
+<div style="overflow-x: auto;">
+<table style="width: 100%; min-width: 560px; border-collapse: collapse;">
+<thead><tr style="background: #F0F0EB; text-align: left; font-size: 13px; color: #3E434D;"><th scope="col" style="padding: 10px 18px; font-weight: 600;">channel</th><th scope="col" style="padding: 10px 8px; font-weight: 600; text-align: right;">spend_usd</th><th scope="col" style="padding: 10px 8px; font-weight: 600; text-align: right;">customers_ft</th><th scope="col" style="padding: 10px 8px; font-weight: 600; text-align: right;">cac_first_touch</th><th scope="col" style="padding: 10px 18px; font-weight: 600; text-align: right;">cac_last_touch</th></tr></thead>
+<tbody>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+<tr style="border-top: 1px solid #E4E4DE;"><td style="padding: 11px 18px; font-weight: 600;">{{r.ch}}</td><td style="text-align: right;">{{r.spend}}</td><td style="text-align: right; background: {{r.custHi}};">{{r.cust}}</td><td style="text-align: right; font-weight: 600; background: {{r.ftHi}};">{{r.ft}}</td><td style="padding: 11px 18px; text-align: right; color: #3E434D;">{{r.lt}}</td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+<section aria-labelledby="ch" style="flex: 1 1 320px; min-width: 0; background: #FFFFFF; border: 1px solid #D9D9D2; border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 8px;">
+<h2 id="ch" style="margin: 0; font-size: 17px;">CAC by channel, first touch</h2>
+<span style="font-size: 13px; color: #565B66;">Categories, so a bar chart (picked by result shape, in code)</span>
+<sc-for list="{{rows}}" as="r" hint-placeholder-count="4">
+<div style="display: grid; grid-template-columns: 96px 1fr 60px; gap: 8px; align-items: center;">
+<span style="font-size: 14px;">{{r.ch}}</span>
+<div style="height: 18px; background: #EEEEEA; border-radius: 4px;"><div style="height: 18px; width: {{r.w}}; background: #0F5E63; border-radius: 4px;"></div></div>
+<span style="font-size: 14px; font-weight: 600; text-align: right;">{{r.ft}}</span>
+</div>
+</sc-for>
+</section>
+</div>
+
+<section aria-labelledby="how" style="background: #FFFFFF; border: 1px solid #D9D9D2; border-radius: 14px; padding: 18px; display: flex; flex-wrap: wrap; gap: 18px;">
+<div style="flex: 1 1 460px; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+<div style="display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; align-items: baseline;">
+<h2 id="how" style="margin: 0; font-size: 17px;">The SQL that ran</h2>
+<span style="font-size: 12px; font-weight: 600; color: #3E434D; border: 1px dashed #8A8F99; border-radius: 6px; padding: 1px 8px;">Drafted by the demo's fake model (no API key in this build)</span>
+</div>
+<pre style="margin: 0; background: #16181D; color: #E6E7E3; border-radius: 10px; padding: 14px 16px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.55; overflow-x: auto;">SELECT channel,
+       SUM(spend_usd)                          AS spend_usd,
+       SUM(new_customers_first_touch)          AS customers_ft,
+       SUM(spend_usd) / NULLIF(SUM(new_customers_first_touch), 0) AS cac_first_touch,
+       SUM(spend_usd) / NULLIF(SUM(new_customers_last_touch), 0)  AS cac_last_touch
+FROM   mart_channel_quarter
+WHERE  quarter = '2026-Q3'
+GROUP  BY channel
+ORDER  BY cac_first_touch DESC
+LIMIT  500</pre>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+<h3 style="margin: 0; font-size: 15px;">Guards (checked in code, before it ran)</h3>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px;">
+<sc-for list="{{guards}}" as="g" hint-placeholder-count="6"><li style="display: flex; gap: 8px;"><span style="color: #1D4F91; font-weight: 700;" aria-hidden="true">✓</span><span><strong style="font-weight: 600;">Passed:</strong> {{g}}</span></li></sc-for>
+</ul>
+</div>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1720}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const hi = '#E7F2F2';
+    const rows = [
+      { ch: 'Events', spend: '$60,000', cust: '40', ft: '$1,500', lt: '$1,250', w: '100%', ftHi: hi, custHi: 'transparent' },
+      { ch: 'LinkedIn', spend: '$96,000', cust: '80', ft: '$1,200', lt: '$1,371', w: '80%', ftHi: 'transparent', custHi: 'transparent' },
+      { ch: 'Paid search', spend: '$84,000', cust: '120', ft: '$700', lt: '$646', w: '46.7%', ftHi: hi, custHi: hi },
+      { ch: 'Organic', spend: '$12,000', cust: '60', ft: '$200', lt: '$231', w: '13.3%', ftHi: hi, custHi: 'transparent' }
+    ];
+    const guards = ['one SELECT statement, parsed', 'only allowlisted marts (mart_channel_quarter)', 'no SELECT * on a fact table', 'row limit added (500)', 'read-only connection', 'finished in 0.4 s, under the 5 s timeout'];
+    return { rows, guards };
+  }
+}
+</script>
+</body>
+</html>

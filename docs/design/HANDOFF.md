@@ -1,0 +1,32 @@
+# Design handoff
+
+Source of truth for the UI built on branch `design/impl`. Exported 2026-11-18 from the Claude Design canvas so cloud runs don't depend on artifact access.
+
+- Canvas: https://claude.ai/artifact/XU4VftMnpiQmiDp1i8FABd
+- Brief: https://claude.ai/artifact/G7rMUD716MHRiTqujsxtmr
+
+## Artboards (`docs/design/*.dc.html`)
+
+Each file is a self-contained Design Component: HTML with inline styles, `{{holes}}` filled by the `renderVals()` script at the bottom. Read the markup and the script together; the script holds the sample data.
+
+| File | Screen | Frame |
+| --- | --- | --- |
+| `Main.dc.html` | Ask — question to traced answer | 1280×1720 |
+| `Refusal.dc.html` | Refusal — a guard said no | 1280×820 |
+| `Eval.dc.html` | Eval — 40 golden questions (public) | 1280×1120 |
+
+## Owner calls (binding)
+
+- First touch is the primary attribution model for funnel and CAC; last touch is a second column. (Shane, 2026-11-14)
+- Brief open questions not answered by Shane; the design took the recommendations: keep FastAPI + HTMX (D-03), chart type fixed by result shape in code, eval page public. Record as DECISIONS rows.
+
+## Gaps: screens the PRD needs that no artboard covers
+
+- Starter-question empty state
+- 'Data can't answer' refusal variant (shown only as a note on the Refusal artboard)
+
+Design each gap as a new `docs/design/<Name>.dc.html` in the same look before building it.
+
+## Placeholders
+
+Every number on the Ask and Eval artboards is illustrative ([NN], [DATE], the CAC table); show only real result-set values.
