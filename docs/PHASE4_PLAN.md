@@ -30,15 +30,15 @@ runs.
 
 ## Tasks
 
-1. [ ] Plan (this file) committed first.
-2. [ ] Dependencies: `fastapi`, `jinja2`, `uvicorn`, `python-multipart` (runtime) and `httpx` (TestClient, dev) (D-40).
-3. [ ] `rollup/ui/chart.py`: chart rules (D-42) → `ChartSpec` → inline SVG.
-4. [ ] `rollup/ui/app.py` + templates + vendored `htmx.min.js`: `create_app(model=..., db_path=..., manifest=...)`,
+1. [x] Plan (this file) committed first.
+2. [x] Dependencies: `fastapi`, `jinja2`, `uvicorn`, `python-multipart` (runtime) and `httpx` (TestClient, dev) (D-40).
+3. [x] `rollup/ui/chart.py`: chart rules (D-42) → `ChartSpec` → inline SVG.
+4. [x] `rollup/ui/app.py` + templates + vendored `htmx.min.js`: `create_app(model=..., db_path=..., manifest=...)`,
    `GET /` (form + recorded example questions), `POST /ask` (HTMX partial or full page), `GET /healthz`.
    Model choice: recorded by default, live only on explicit opt-in with a key present (D-41).
-5. [ ] `make ui` target; `python -m rollup.ui`.
-6. [ ] Tests (below); they run inside `make ci` (unit tests in `make test`, route tests in `make test-warehouse`).
-7. [ ] Eval run on the recorded drafts committed under `docs/eval/` for the case study (D-43).
+5. [x] `make ui` target; `python -m rollup.ui`.
+6. [x] Tests (below); they run inside `make ci` (unit tests in `make test`, route tests in `make test-warehouse`).
+7. [x] Eval run on the recorded drafts committed under `docs/eval/` for the case study (D-44).
 8. [ ] README case study + status line, NEXT.md, DECISIONS rows, PR.
 
 ## Acceptance items and the tests that prove them

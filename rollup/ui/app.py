@@ -7,7 +7,7 @@ connection (``open_readonly``) and hands the question to ``ask``, which drafts, 
   question -> drafted SQL -> guard result (passed + executed SQL, or refused + code + reason)
            -> result table -> one-paragraph answer (already validated) -> chart picked from the result shape
 
-What is never rendered (D-44): the model's paragraph when RU-03 rejected it, and the violation messages (both
+What is never rendered (D-43): the model's paragraph when RU-03 rejected it, and the violation messages (both
 contain the numbers that were not in the result). The page says a paragraph was rejected and shows the fallback.
 
 Model (D-41): the recorded model by default (offline, no key). The live adapter only when the owner asks for it
