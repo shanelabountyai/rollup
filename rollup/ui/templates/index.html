@@ -1,0 +1,86 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rollup</title>
+<script src="/static/htmx.min.js"></script>
+<style>
+:root { --bg:#fbfbfa; --fg:#1d1d1b; --muted:#6b6a65; --line:#dedcd6; --card:#ffffff; --accent:#2f5d8a;
+        --ok:#2e7d4f; --bad:#a63d32; --warn:#8a6d1f; --code:#f3f2ee; }
+@media (prefers-color-scheme: dark) {
+  :root { --bg:#161615; --fg:#ecebe6; --muted:#a3a19a; --line:#34332f; --card:#1e1e1c; --accent:#7fb0de;
+          --ok:#6cc58f; --bad:#e38a7f; --warn:#d9b45a; --code:#262623; }
+}
+* { box-sizing: border-box; }
+body { margin:0; background:var(--bg); color:var(--fg); font:15px/1.5 system-ui, -apple-system, "Segoe UI", sans-serif; }
+main { max-width: 920px; margin: 0 auto; padding: 24px 16px 64px; }
+h1 { font-size: 22px; margin: 0 0 4px; }
+.sub { color: var(--muted); margin: 0 0 20px; }
+form.ask { display:flex; gap:8px; }
+form.ask input[type=text] { flex:1; min-width:0; padding:10px 12px; font:inherit; border:1px solid var(--line);
+  border-radius:8px; background:var(--card); color:var(--fg); }
+button { font:inherit; padding:9px 14px; border-radius:8px; border:1px solid var(--accent); background:var(--accent);
+  color:var(--bg); cursor:pointer; }
+button.ex { background:transparent; color:var(--accent); border-color:var(--line); padding:4px 8px; font-size:13px;
+  text-align:left; }
+details.examples { margin:12px 0 20px; color:var(--muted); }
+details.examples ul { list-style:none; padding:0; margin:8px 0; display:flex; flex-wrap:wrap; gap:6px; }
+details.examples form { display:inline; }
+.card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; margin:14px 0; }
+.card h2 { font-size:13px; text-transform:uppercase; letter-spacing:.04em; color:var(--muted); margin:0 0 8px; }
+pre { background:var(--code); padding:10px 12px; border-radius:8px; overflow-x:auto; margin:6px 0;
+  font:13px/1.45 ui-monospace, SFMono-Regular, Menlo, monospace; white-space:pre-wrap; }
+.badge { display:inline-block; padding:2px 8px; border-radius:999px; font-size:12px; font-weight:600;
+  border:1px solid currentColor; }
+.passed { color:var(--ok); } .refused { color:var(--bad); } .notreached { color:var(--muted); } .warn { color:var(--warn); }
+.tablewrap { overflow-x:auto; max-height:420px; overflow-y:auto; }
+table { border-collapse:collapse; font-size:13px; width:100%; }
+th, td { padding:5px 8px; border-bottom:1px solid var(--line); text-align:left; white-space:nowrap; }
+th { position:sticky; top:0; background:var(--card); }
+
+.answer { font-size:16px; }
+.meta { color:var(--muted); font-size:13px; }
+.error { color:var(--bad); }
+svg.chart .bar { fill:var(--accent); } svg.chart .line { fill:none; stroke:var(--accent); stroke-width:2; }
+svg.chart .pt { fill:var(--accent); } svg.chart .axis { stroke:var(--line); }
+svg.chart text { fill:var(--fg); font-size:12px; } svg.chart text.val { fill:var(--muted); }
+.htmx-indicator { display:none; } .htmx-request .htmx-indicator, .htmx-request.htmx-indicator { display:inline; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Rollup</h1>
+  <p class="sub">Ask the marketing marts a question. The SQL is shown and checked before it runs, and the answer may
+    only cite numbers in the result. Data is synthetic (seeded generator, fictional B2B company).</p>
+  <p class="meta">Model: <strong>{{ model_name }}</strong>{% if recorded %} (recorded responses, offline: only the
+    questions below have a recorded draft){% endif %}</p>
+
+  <form class="ask" method="post" action="/ask" hx-post="/ask" hx-target="#result" hx-indicator="#spin">
+    <input type="text" name="question" value="{{ question }}" list="recorded-questions" maxlength="500"
+           placeholder="e.g. What was total ad spend by platform?" aria-label="Question" required>
+    <button type="submit">Ask</button>
+  </form>
+  <span id="spin" class="htmx-indicator meta">Running…</span>
+
+  {% if examples %}
+  <datalist id="recorded-questions">
+    {% for ex in examples %}<option value="{{ ex.question }}">{% endfor %}
+  </datalist>
+  <details class="examples">
+    <summary>Recorded questions ({{ examples|length }}: golden set and refusal set)</summary>
+    <ul>
+      {% for ex in examples %}
+      <li><form method="post" action="/ask" hx-post="/ask" hx-target="#result" hx-indicator="#spin">
+        <input type="hidden" name="question" value="{{ ex.question }}">
+        <button class="ex" type="submit" title="{{ ex.set }} set">{{ ex.question }}</button>
+      </form></li>
+      {% endfor %}
+    </ul>
+  </details>
+  {% endif %}
+
+  <div id="result" aria-live="polite">{% include "_result.html" %}</div>
+</main>
+</body>
+</html>

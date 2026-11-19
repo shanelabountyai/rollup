@@ -1,0 +1,1268 @@
+{
+  "schema": "rollup.eval.run/v1",
+  "project": "rollup",
+  "model": "reference",
+  "drafts": "reference",
+  "note": "Reference SQL drafted; harness check only.",
+  "summary": {
+    "golden_total": 40,
+    "golden_equivalent": 40,
+    "golden_score": 1.0,
+    "golden_status_counts": {
+      "answered": 40
+    },
+    "refusal_total": 8,
+    "refusal_correct": 8,
+    "refusal_status_counts": {
+      "refused_question": 8
+    },
+    "answers_shown": 40,
+    "answers_from_model": 0,
+    "answers_from_fallback": 40,
+    "model_paragraphs_rejected_ru03": 40,
+    "guard_refusals_by_code": {},
+    "invariant_failures": 0,
+    "db_unchanged": true
+  },
+  "items": [
+    {
+      "set": "golden",
+      "id": "01_spend_by_platform",
+      "question": "What was total ad spend by platform?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select platform, sum(spend_usd) as spend_usd\nfrom marts.fct_spend\ngroup by platform\n",
+      "executed_sql": "SELECT platform, SUM(spend_usd) AS spend_usd FROM marts.fct_spend GROUP BY platform LIMIT 1001",
+      "columns": [
+        "platform",
+        "spend_usd"
+      ],
+      "row_count": 3,
+      "truncated": false,
+      "answer": "The first rows of the result are: platform meta_ads, spend_usd 150,788.76; platform google_ads, spend_usd 504,434.47; platform linkedin_ads, spend_usd 369,325.12.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.6,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 3,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "02_paid_spend_by_month",
+      "question": "What was total paid spend each month, in date order?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select spend_month, sum(spend_usd) as spend_usd\nfrom marts.fct_spend\ngroup by spend_month\norder by spend_month\n",
+      "executed_sql": "SELECT spend_month, SUM(spend_usd) AS spend_usd FROM marts.fct_spend GROUP BY spend_month ORDER BY spend_month LIMIT 1001",
+      "columns": [
+        "spend_month",
+        "spend_usd"
+      ],
+      "row_count": 18,
+      "truncated": false,
+      "answer": "The first rows of the result are: spend_month 2025-05-01, spend_usd 37,623.14; spend_month 2025-06-01, spend_usd 46,520.97; spend_month 2025-07-01, spend_usd 54,556.37. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.2,
+      "invariant_failures": [],
+      "ordered": true,
+      "reference_row_count": 18,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "03_top5_campaigns_lifetime_spend",
+      "question": "Which five campaigns have the highest lifetime spend?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select campaign_name, lifetime_spend_usd\nfrom marts.dim_campaign\norder by lifetime_spend_usd desc\nlimit 5\n",
+      "executed_sql": "SELECT campaign_name, lifetime_spend_usd FROM marts.dim_campaign ORDER BY lifetime_spend_usd DESC LIMIT 5",
+      "columns": [
+        "campaign_name",
+        "lifetime_spend_usd"
+      ],
+      "row_count": 5,
+      "truncated": false,
+      "answer": "The first rows of the result are: campaign_name Nonbrand Attribution Software, lifetime_spend_usd 151,858.18; campaign_name ABM Enterprise Always-On, lifetime_spend_usd 126,608.81; campaign_name Ops Persona Lead Gen, lifetime_spend_usd 111,330.21. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.7,
+      "invariant_failures": [],
+      "ordered": true,
+      "reference_row_count": 5,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "04_ctr_by_channel",
+      "question": "What is the click-through rate (clicks divided by impressions) for each paid channel?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, sum(clicks)::double / sum(impressions) as ctr\nfrom marts.fct_spend\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, CAST(SUM(clicks) AS DOUBLE) / SUM(impressions) AS ctr FROM marts.fct_spend GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "ctr"
+      ],
+      "row_count": 2,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key paid_search, ctr 0.01; channel_key paid_social, ctr 0.01.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 2.5,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 2,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "05_cpc_by_platform",
+      "question": "What is the average cost per click on each ad platform?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select platform, sum(spend_usd) / sum(clicks) as cost_per_click_usd\nfrom marts.fct_spend\ngroup by platform\n",
+      "executed_sql": "SELECT platform, SUM(spend_usd) / SUM(clicks) AS cost_per_click_usd FROM marts.fct_spend GROUP BY platform LIMIT 1001",
+      "columns": [
+        "platform",
+        "cost_per_click_usd"
+      ],
+      "row_count": 3,
+      "truncated": false,
+      "answer": "The first rows of the result are: platform meta_ads, cost_per_click_usd 2.59; platform google_ads, cost_per_click_usd 5.99; platform linkedin_ads, cost_per_click_usd 9.65.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.5,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 3,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "06_renamed_campaigns",
+      "question": "Which campaigns have been renamed, and what were their previous names?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select campaign_id, campaign_name, previous_names\nfrom marts.dim_campaign\nwhere was_renamed\n",
+      "executed_sql": "SELECT campaign_id, campaign_name, previous_names FROM marts.dim_campaign WHERE was_renamed LIMIT 1001",
+      "columns": [
+        "campaign_id",
+        "campaign_name",
+        "previous_names"
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "answer": "The result has one row: campaign_id li_2001, campaign_name ABM Enterprise Always-On, previous_names ABM Enterprise Q3 2025.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 0.8,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 1,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "07_campaigns_per_platform",
+      "question": "How many campaigns run on each platform?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select platform, count(*) as campaigns\nfrom marts.dim_campaign\ngroup by platform\n",
+      "executed_sql": "SELECT platform, COUNT(*) AS campaigns FROM marts.dim_campaign GROUP BY platform LIMIT 1001",
+      "columns": [
+        "platform",
+        "campaigns"
+      ],
+      "row_count": 3,
+      "truncated": false,
+      "answer": "The first rows of the result are: platform meta_ads, campaigns 6; platform google_ads, campaigns 6; platform linkedin_ads, campaigns 6.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.2,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 3,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "08_running_campaigns",
+      "question": "Which campaigns are still running (no end date)?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select campaign_id, campaign_name\nfrom marts.dim_campaign\nwhere end_date is null\n",
+      "executed_sql": "SELECT campaign_id, campaign_name FROM marts.dim_campaign WHERE end_date IS NULL LIMIT 1001",
+      "columns": [
+        "campaign_id",
+        "campaign_name"
+      ],
+      "row_count": 10,
+      "truncated": false,
+      "answer": "The first rows of the result are: campaign_id gads_1001, campaign_name Brand Search; campaign_id gads_1003, campaign_name Nonbrand Attribution Software; campaign_id li_2003, campaign_name Ops Persona Lead Gen. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 0.8,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 10,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "09_spend_q1_2026_by_channel",
+      "question": "How much did each paid channel spend in Q1 2026?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, sum(spend_usd) as spend_usd\nfrom marts.fct_spend\nwhere spend_date >= date '2026-01-01' and spend_date < date '2026-04-01'\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, SUM(spend_usd) AS spend_usd FROM marts.fct_spend WHERE spend_date >= CAST('2026-01-01' AS DATE) AND spend_date < CAST('2026-04-01' AS DATE) GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "spend_usd"
+      ],
+      "row_count": 2,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key paid_search, spend_usd 98,920.87; channel_key paid_social, spend_usd 100,737.35.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.5,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 2,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "10_opportunities_by_stage",
+      "question": "How many opportunities are in each stage?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select stage, count(*) as opportunities\nfrom marts.fct_pipeline\ngroup by stage\n",
+      "executed_sql": "SELECT stage, COUNT(*) AS opportunities FROM marts.fct_pipeline GROUP BY stage LIMIT 1001",
+      "columns": [
+        "stage",
+        "opportunities"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: stage closed_lost, opportunities 1,122; stage prospecting, opportunities 67; stage closed_won, opportunities 360. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.3,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "11_open_pipeline_value",
+      "question": "What is the total value of open (not closed) pipeline?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select sum(amount_usd) as open_pipeline_usd\nfrom marts.fct_pipeline\nwhere not is_closed\n",
+      "executed_sql": "SELECT SUM(amount_usd) AS open_pipeline_usd FROM marts.fct_pipeline WHERE NOT is_closed LIMIT 1001",
+      "columns": [
+        "open_pipeline_usd"
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "answer": "The result has one row: open_pipeline_usd 4,344,900.00.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.1,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 1,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "12_overall_win_rate",
+      "question": "What share of closed opportunities were won?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select avg(case when is_won then 1.0 else 0.0 end) as win_rate\nfrom marts.fct_pipeline\nwhere is_closed\n",
+      "executed_sql": "SELECT AVG(CASE WHEN is_won THEN 1.0 ELSE 0.0 END) AS win_rate FROM marts.fct_pipeline WHERE is_closed LIMIT 1001",
+      "columns": [
+        "win_rate"
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "answer": "The result has one row: win_rate 0.24.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.1,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 1,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "13_win_rate_by_first_touch",
+      "question": "What is the win rate of closed opportunities by first-touch channel?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select first_touch_channel_key, avg(case when is_won then 1.0 else 0.0 end) as win_rate\nfrom marts.fct_pipeline\nwhere is_closed\ngroup by first_touch_channel_key\n",
+      "executed_sql": "SELECT first_touch_channel_key, AVG(CASE WHEN is_won THEN 1.0 ELSE 0.0 END) AS win_rate FROM marts.fct_pipeline WHERE is_closed GROUP BY first_touch_channel_key LIMIT 1001",
+      "columns": [
+        "first_touch_channel_key",
+        "win_rate"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: first_touch_channel_key organic_search, win_rate 0.25; first_touch_channel_key direct, win_rate 0.26; first_touch_channel_key referral, win_rate 0.23. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.5,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "14_days_to_close_won_by_first_touch",
+      "question": "On average, how many days do won deals take to close, by first-touch channel?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select first_touch_channel_key, avg(days_to_close) as avg_days_to_close\nfrom marts.fct_pipeline\nwhere is_won\ngroup by first_touch_channel_key\n",
+      "executed_sql": "SELECT first_touch_channel_key, AVG(days_to_close) AS avg_days_to_close FROM marts.fct_pipeline WHERE is_won GROUP BY first_touch_channel_key LIMIT 1001",
+      "columns": [
+        "first_touch_channel_key",
+        "avg_days_to_close"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: first_touch_channel_key direct, avg_days_to_close 68.21; first_touch_channel_key organic_search, avg_days_to_close 69.46; first_touch_channel_key paid_search, avg_days_to_close 69.23. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.3,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "15_won_revenue_by_close_month",
+      "question": "How much revenue was won each month (by close date), in date order?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select date_trunc('month', close_date) as close_month, sum(won_amount_usd) as won_revenue_usd\nfrom marts.fct_pipeline\nwhere is_won\ngroup by close_month\norder by close_month\n",
+      "executed_sql": "SELECT DATE_TRUNC('MONTH', close_date) AS close_month, SUM(won_amount_usd) AS won_revenue_usd FROM marts.fct_pipeline WHERE is_won GROUP BY close_month ORDER BY close_month LIMIT 1001",
+      "columns": [
+        "close_month",
+        "won_revenue_usd"
+      ],
+      "row_count": 16,
+      "truncated": false,
+      "answer": "The first rows of the result are: close_month 2025-07-01 00:00:00, won_revenue_usd 143,000.00; close_month 2025-08-01 00:00:00, won_revenue_usd 286,200.00; close_month 2025-09-01 00:00:00, won_revenue_usd 862,200.00. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.4,
+      "invariant_failures": [],
+      "ordered": true,
+      "reference_row_count": 16,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "16_avg_won_deal_by_first_touch",
+      "question": "What is the average won deal size by first-touch channel?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select first_touch_channel_key, avg(amount_usd) as avg_won_deal_usd\nfrom marts.fct_pipeline\nwhere is_won\ngroup by first_touch_channel_key\n",
+      "executed_sql": "SELECT first_touch_channel_key, AVG(amount_usd) AS avg_won_deal_usd FROM marts.fct_pipeline WHERE is_won GROUP BY first_touch_channel_key LIMIT 1001",
+      "columns": [
+        "first_touch_channel_key",
+        "avg_won_deal_usd"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: first_touch_channel_key direct, avg_won_deal_usd 26,847.54; first_touch_channel_key organic_search, avg_won_deal_usd 28,910.26; first_touch_channel_key paid_search, avg_won_deal_usd 29,405.13. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.6,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "17_largest_won_deals",
+      "question": "What are the ten largest won deals?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select opportunity_id, opportunity_name, amount_usd\nfrom marts.fct_pipeline\nwhere is_won\norder by amount_usd desc, opportunity_id\nlimit 10\n",
+      "executed_sql": "SELECT opportunity_id, opportunity_name, amount_usd FROM marts.fct_pipeline WHERE is_won ORDER BY amount_usd DESC, opportunity_id LIMIT 10",
+      "columns": [
+        "opportunity_id",
+        "opportunity_name",
+        "amount_usd"
+      ],
+      "row_count": 10,
+      "truncated": false,
+      "answer": "The first rows of the result are: opportunity_id 0060000085, opportunity_name Granite Systems - New Business, amount_usd 157,000.00; opportunity_id 0060000681, opportunity_name Fathom Group - New Business, amount_usd 134,000.00; opportunity_id 0060000638, opportunity_name Summit Systems - New Business, amount_usd 131,200.00. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 2.2,
+      "invariant_failures": [],
+      "ordered": true,
+      "reference_row_count": 10,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "18_opps_created_by_quarter",
+      "question": "How many opportunities were created each quarter, in date order?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select date_trunc('quarter', created_date) as quarter_start, count(*) as opportunities\nfrom marts.fct_pipeline\ngroup by quarter_start\norder by quarter_start\n",
+      "executed_sql": "SELECT DATE_TRUNC('QUARTER', created_date) AS quarter_start, COUNT(*) AS opportunities FROM marts.fct_pipeline GROUP BY quarter_start ORDER BY quarter_start LIMIT 1001",
+      "columns": [
+        "quarter_start",
+        "opportunities"
+      ],
+      "row_count": 7,
+      "truncated": false,
+      "answer": "The first rows of the result are: quarter_start 2025-04-01 00:00:00, opportunities 96; quarter_start 2025-07-01 00:00:00, opportunities 267; quarter_start 2025-10-01 00:00:00, opportunities 288. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.9,
+      "invariant_failures": [],
+      "ordered": true,
+      "reference_row_count": 7,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "19_won_first_vs_last_by_channel",
+      "question": "How many deals did each channel win under first-touch versus last-touch credit?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, sum(deals_won) as deals_won_first_touch, sum(deals_won_last_touch) as deals_won_last_touch\nfrom marts.mart_funnel_weekly\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, SUM(deals_won) AS deals_won_first_touch, SUM(deals_won_last_touch) AS deals_won_last_touch FROM marts.mart_funnel_weekly GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "deals_won_first_touch",
+        "deals_won_last_touch"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key direct, deals_won_first_touch 61, deals_won_last_touch 39; channel_key organic_search, deals_won_first_touch 117, deals_won_last_touch 118; channel_key paid_social, deals_won_first_touch 42, deals_won_last_touch 36. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.8,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "20_won_revenue_paid_vs_unpaid",
+      "question": "How much won revenue came from paid versus unpaid first-touch channels?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select c.is_paid, sum(p.won_amount_usd) as won_revenue_usd\nfrom marts.fct_pipeline as p\njoin marts.dim_channel as c on c.channel_key = p.first_touch_channel_key\ngroup by c.is_paid\n",
+      "executed_sql": "SELECT c.is_paid, SUM(p.won_amount_usd) AS won_revenue_usd FROM marts.fct_pipeline AS p JOIN marts.dim_channel AS c ON c.channel_key = p.first_touch_channel_key GROUP BY c.is_paid LIMIT 1001",
+      "columns": [
+        "is_paid",
+        "won_revenue_usd"
+      ],
+      "row_count": 2,
+      "truncated": false,
+      "answer": "The first rows of the result are: is_paid false, won_revenue_usd 7,087,800.00; is_paid true, won_revenue_usd 3,467,100.00.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 3.3,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 2,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "21_leads_by_channel",
+      "question": "How many new leads did each channel generate (first touch)?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, sum(new_leads) as new_leads\nfrom marts.mart_funnel_weekly\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, SUM(new_leads) AS new_leads FROM marts.mart_funnel_weekly GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "new_leads"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key direct, new_leads 1,351; channel_key organic_search, new_leads 3,079; channel_key paid_social, new_leads 1,510. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.6,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "22_sessions_by_channel",
+      "question": "How many web sessions did each channel drive?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, sum(sessions) as sessions\nfrom marts.mart_funnel_weekly\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, SUM(sessions) AS sessions FROM marts.mart_funnel_weekly GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "sessions"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key direct, sessions 83,480; channel_key organic_search, sessions 155,472; channel_key paid_social, sessions 77,635. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.5,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "23_form_fill_rate_by_channel",
+      "question": "What is the form-fill rate (form fills per session) by channel?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, sum(form_fills)::double / nullif(sum(sessions), 0) as form_fill_rate\nfrom marts.mart_funnel_weekly\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, CAST(SUM(form_fills) AS DOUBLE) / NULLIF(SUM(sessions), 0) AS form_fill_rate FROM marts.mart_funnel_weekly GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "form_fill_rate"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key direct, form_fill_rate 0.01; channel_key organic_search, form_fill_rate 0.02; channel_key paid_social, form_fill_rate 0.02. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 2.0,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "24_lead_to_opp_rate_by_channel",
+      "question": "What share of new leads became opportunities, by first-touch channel?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, sum(opportunities_created)::double / nullif(sum(new_leads), 0) as lead_to_opp_rate\nfrom marts.mart_funnel_weekly\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, CAST(SUM(opportunities_created) AS DOUBLE) / NULLIF(SUM(new_leads), 0) AS lead_to_opp_rate FROM marts.mart_funnel_weekly GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "lead_to_opp_rate"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key direct, lead_to_opp_rate 0.19; channel_key organic_search, lead_to_opp_rate 0.17; channel_key paid_social, lead_to_opp_rate 0.14. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 2.0,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "25_weekly_leads_last_8_weeks",
+      "question": "How many new leads came in each of the last eight weeks, in date order?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select week_start, sum(new_leads) as new_leads\nfrom marts.mart_funnel_weekly\nwhere week_start >= (select max(week_start) from marts.mart_funnel_weekly) - interval 7 week\ngroup by week_start\norder by week_start\n",
+      "executed_sql": "SELECT week_start, SUM(new_leads) AS new_leads FROM marts.mart_funnel_weekly WHERE week_start >= (SELECT MAX(week_start) FROM marts.mart_funnel_weekly) - INTERVAL '7' WEEK GROUP BY week_start ORDER BY week_start LIMIT 1001",
+      "columns": [
+        "week_start",
+        "new_leads"
+      ],
+      "row_count": 8,
+      "truncated": false,
+      "answer": "The first rows of the result are: week_start 2026-09-07, new_leads 125; week_start 2026-09-14, new_leads 139; week_start 2026-09-21, new_leads 122. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 2.2,
+      "invariant_failures": [],
+      "ordered": true,
+      "reference_row_count": 8,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "26_pipeline_created_2025_by_channel",
+      "question": "How much pipeline did each channel create in weeks starting in 2025?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, sum(pipeline_created_usd) as pipeline_created_usd\nfrom marts.mart_funnel_weekly\nwhere week_start >= date '2025-01-01' and week_start < date '2026-01-01'\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, SUM(pipeline_created_usd) AS pipeline_created_usd FROM marts.mart_funnel_weekly WHERE week_start >= CAST('2025-01-01' AS DATE) AND week_start < CAST('2026-01-01' AS DATE) GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "pipeline_created_usd"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key direct, pipeline_created_usd 2,798,200.00; channel_key organic_search, pipeline_created_usd 6,655,500.00; channel_key paid_social, pipeline_created_usd 2,180,100.00. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.9,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "27_cac_by_paid_channel",
+      "question": "What is the overall first-touch CAC for each paid channel?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, sum(spend_usd) / nullif(sum(new_customers), 0) as cac_usd\nfrom marts.mart_cac_by_channel\nwhere is_paid\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, SUM(spend_usd) / NULLIF(SUM(new_customers), 0) AS cac_usd FROM marts.mart_cac_by_channel WHERE is_paid GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "cac_usd"
+      ],
+      "row_count": 2,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key paid_search, cac_usd 6,467.11; channel_key paid_social, cac_usd 12,383.66.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.8,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 2,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "28_cac_last_touch_by_paid_channel",
+      "question": "What is the overall last-touch CAC for each paid channel?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, sum(spend_usd) / nullif(sum(new_customers_last_touch), 0) as cac_usd_last_touch\nfrom marts.mart_cac_by_channel\nwhere is_paid\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, SUM(spend_usd) / NULLIF(SUM(new_customers_last_touch), 0) AS cac_usd_last_touch FROM marts.mart_cac_by_channel WHERE is_paid GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "cac_usd_last_touch"
+      ],
+      "row_count": 2,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key paid_search, cac_usd_last_touch 5,200.36; channel_key paid_social, cac_usd_last_touch 14,447.61.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 2.1,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 2,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "29_highest_spend_month",
+      "question": "Which month had the highest total ad spend?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select spend_month, sum(spend_usd) as spend_usd\nfrom marts.fct_spend\ngroup by spend_month\norder by spend_usd desc\nlimit 1\n",
+      "executed_sql": "SELECT spend_month, SUM(spend_usd) AS spend_usd FROM marts.fct_spend GROUP BY spend_month ORDER BY spend_usd DESC LIMIT 1",
+      "columns": [
+        "spend_month",
+        "spend_usd"
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "answer": "The result has one row: spend_month 2026-03-01, spend_usd 69,855.52.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.4,
+      "invariant_failures": [],
+      "ordered": true,
+      "reference_row_count": 1,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "30_lowest_cac_month_paid_search",
+      "question": "Which month had the lowest first-touch CAC for paid search?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select month_start, cac_usd\nfrom marts.mart_cac_by_channel\nwhere channel_key = 'paid_search' and cac_usd is not null\norder by cac_usd asc\nlimit 1\n",
+      "executed_sql": "SELECT month_start, cac_usd FROM marts.mart_cac_by_channel WHERE channel_key = 'paid_search' AND NOT cac_usd IS NULL ORDER BY cac_usd ASC LIMIT 1",
+      "columns": [
+        "month_start",
+        "cac_usd"
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "answer": "The result has one row: month_start 2025-10-01, cac_usd 3,139.08.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 2.0,
+      "invariant_failures": [],
+      "ordered": true,
+      "reference_row_count": 1,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "31_roas_by_paid_channel",
+      "question": "What is the return on ad spend (first-touch new-customer revenue divided by spend) for each paid channel?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, sum(new_customer_revenue_usd) / nullif(sum(spend_usd), 0) as roas\nfrom marts.mart_cac_by_channel\nwhere is_paid\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, SUM(new_customer_revenue_usd) / NULLIF(SUM(spend_usd), 0) AS roas FROM marts.mart_cac_by_channel WHERE is_paid GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "roas"
+      ],
+      "row_count": 2,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key paid_search, roas 4.55; channel_key paid_social, roas 2.26.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 2.1,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 2,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "32_avg_touches_per_person",
+      "question": "On average, how many pre-conversion touches does a lead have?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select avg(touch_count) as avg_touches\nfrom marts.fct_touches\nwhere is_first_touch\n",
+      "executed_sql": "SELECT AVG(touch_count) AS avg_touches FROM marts.fct_touches WHERE is_first_touch LIMIT 1001",
+      "columns": [
+        "avg_touches"
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "answer": "The result has one row: avg_touches 1.88.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.5,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 1,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "33_touches_by_channel",
+      "question": "How many marketing touches did each channel get?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, count(*) as touches\nfrom marts.fct_touches\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, COUNT(*) AS touches FROM marts.fct_touches GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "touches"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key paid_social, touches 2,809; channel_key referral, touches 1,444; channel_key email, touches 1,527. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.7,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "34_linear_credit_by_channel",
+      "question": "How much linear attribution credit does each channel earn?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, sum(linear_weight) as linear_credit\nfrom marts.fct_touches\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, SUM(linear_weight) AS linear_credit FROM marts.fct_touches GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "linear_credit"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key organic_search, linear_credit 3,074.73; channel_key direct, linear_credit 1,205.67; channel_key paid_social, linear_credit 1,412.09. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.8,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "35_first_touch_share_by_channel",
+      "question": "What share of leads had their first touch in each channel?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select channel_key, count(*)::double / sum(count(*)) over () as first_touch_share\nfrom marts.fct_touches\nwhere is_first_touch\ngroup by channel_key\n",
+      "executed_sql": "SELECT channel_key, CAST(COUNT(*) AS DOUBLE) / SUM(COUNT(*)) OVER () AS first_touch_share FROM marts.fct_touches WHERE is_first_touch GROUP BY channel_key LIMIT 1001",
+      "columns": [
+        "channel_key",
+        "first_touch_share"
+      ],
+      "row_count": 6,
+      "truncated": false,
+      "answer": "The first rows of the result are: channel_key organic_search, first_touch_share 0.34; channel_key direct, first_touch_share 0.15; channel_key paid_social, first_touch_share 0.16. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.8,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 6,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "36_people_with_many_touches",
+      "question": "How many leads had more than five touches before converting?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select count(*) as people\nfrom marts.fct_touches\nwhere is_first_touch and touch_count > 5\n",
+      "executed_sql": "SELECT COUNT(*) AS people FROM marts.fct_touches WHERE is_first_touch AND touch_count > 5 LIMIT 1001",
+      "columns": [
+        "people"
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "answer": "The result has one row: people 75.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 1.1,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 1,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "37_top_campaigns_by_first_touches",
+      "question": "Which five paid campaigns were the first touch for the most leads?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select c.campaign_name, count(*) as first_touches\nfrom marts.fct_touches as t\njoin marts.dim_campaign as c on c.campaign_id = t.campaign_id\nwhere t.is_first_touch\ngroup by c.campaign_name\norder by first_touches desc, c.campaign_name\nlimit 5\n",
+      "executed_sql": "SELECT c.campaign_name, COUNT(*) AS first_touches FROM marts.fct_touches AS t JOIN marts.dim_campaign AS c ON c.campaign_id = t.campaign_id WHERE t.is_first_touch GROUP BY c.campaign_name ORDER BY first_touches DESC, c.campaign_name LIMIT 5",
+      "columns": [
+        "campaign_name",
+        "first_touches"
+      ],
+      "row_count": 5,
+      "truncated": false,
+      "answer": "The first rows of the result are: campaign_name Nonbrand Attribution Software, first_touches 514; campaign_name Competitor Conquest, first_touches 404; campaign_name Lookalike Customers, first_touches 342. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 2.6,
+      "invariant_failures": [],
+      "ordered": true,
+      "reference_row_count": 5,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "38_won_revenue_by_first_touch_campaign",
+      "question": "Which five campaigns sourced the most won revenue as first touch?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select c.campaign_name, sum(p.won_amount_usd) as won_revenue_usd\nfrom marts.fct_pipeline as p\njoin marts.dim_campaign as c on c.campaign_id = p.first_touch_campaign_id\ngroup by c.campaign_name\norder by won_revenue_usd desc, c.campaign_name\nlimit 5\n",
+      "executed_sql": "SELECT c.campaign_name, SUM(p.won_amount_usd) AS won_revenue_usd FROM marts.fct_pipeline AS p JOIN marts.dim_campaign AS c ON c.campaign_id = p.first_touch_campaign_id GROUP BY c.campaign_name ORDER BY won_revenue_usd DESC, c.campaign_name LIMIT 5",
+      "columns": [
+        "campaign_name",
+        "won_revenue_usd"
+      ],
+      "row_count": 5,
+      "truncated": false,
+      "answer": "The first rows of the result are: campaign_name Competitor Conquest, won_revenue_usd 832,600.00; campaign_name Nonbrand Attribution Software, won_revenue_usd 666,100.00; campaign_name Nonbrand Pipeline Analytics, won_revenue_usd 421,200.00. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 2.3,
+      "invariant_failures": [],
+      "ordered": true,
+      "reference_row_count": 5,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "39_spend_by_objective",
+      "question": "How much was spent per campaign objective?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select c.objective, sum(s.spend_usd) as spend_usd\nfrom marts.fct_spend as s\njoin marts.dim_campaign as c on c.campaign_id = s.campaign_id\ngroup by c.objective\n",
+      "executed_sql": "SELECT c.objective, SUM(s.spend_usd) AS spend_usd FROM marts.fct_spend AS s JOIN marts.dim_campaign AS c ON c.campaign_id = s.campaign_id GROUP BY c.objective LIMIT 1001",
+      "columns": [
+        "objective",
+        "spend_usd"
+      ],
+      "row_count": 4,
+      "truncated": false,
+      "answer": "The first rows of the result are: objective conversions, spend_usd 535,404.62; objective lead_generation, spend_usd 339,069.55; objective awareness, spend_usd 57,555.01. The full result is in the table.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 2.5,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 4,
+      "equivalent": true
+    },
+    {
+      "set": "golden",
+      "id": "40_spend_date_range",
+      "question": "What date range does the ad spend data cover?",
+      "status": "answered",
+      "guard_code": null,
+      "reason": null,
+      "draft_sql": "select min(spend_date) as first_spend_date, max(spend_date) as last_spend_date\nfrom marts.fct_spend\n",
+      "executed_sql": "SELECT MIN(spend_date) AS first_spend_date, MAX(spend_date) AS last_spend_date FROM marts.fct_spend LIMIT 1001",
+      "columns": [
+        "first_spend_date",
+        "last_spend_date"
+      ],
+      "row_count": 1,
+      "truncated": false,
+      "answer": "The result has one row: first_spend_date 2025-05-01, last_spend_date 2026-10-30.",
+      "answer_source": "fallback",
+      "model_answer": "",
+      "model_answer_violations": [
+        "answer is empty"
+      ],
+      "elapsed_ms": 0.8,
+      "invariant_failures": [],
+      "ordered": false,
+      "reference_row_count": 1,
+      "equivalent": true
+    },
+    {
+      "set": "refusal",
+      "id": "r01_nps",
+      "question": "What is our NPS by customer segment?",
+      "status": "refused_question",
+      "guard_code": null,
+      "reason": "no reference SQL for this question",
+      "draft_sql": null,
+      "executed_sql": null,
+      "columns": [],
+      "row_count": 0,
+      "truncated": false,
+      "answer": "This question can't be answered from the marketing marts.",
+      "answer_source": null,
+      "model_answer": null,
+      "model_answer_violations": [],
+      "elapsed_ms": null,
+      "invariant_failures": [],
+      "correct": true
+    },
+    {
+      "set": "refusal",
+      "id": "r02_sales_rep",
+      "question": "Which sales rep closed the most revenue last quarter?",
+      "status": "refused_question",
+      "guard_code": null,
+      "reason": "no reference SQL for this question",
+      "draft_sql": null,
+      "executed_sql": null,
+      "columns": [],
+      "row_count": 0,
+      "truncated": false,
+      "answer": "This question can't be answered from the marketing marts.",
+      "answer_source": null,
+      "model_answer": null,
+      "model_answer_violations": [],
+      "elapsed_ms": null,
+      "invariant_failures": [],
+      "correct": true
+    },
+    {
+      "set": "refusal",
+      "id": "r03_email_open_rate",
+      "question": "What is the open rate of our newsletter emails?",
+      "status": "refused_question",
+      "guard_code": null,
+      "reason": "no reference SQL for this question",
+      "draft_sql": null,
+      "executed_sql": null,
+      "columns": [],
+      "row_count": 0,
+      "truncated": false,
+      "answer": "This question can't be answered from the marketing marts.",
+      "answer_source": null,
+      "model_answer": null,
+      "model_answer_violations": [],
+      "elapsed_ms": null,
+      "invariant_failures": [],
+      "correct": true
+    },
+    {
+      "set": "refusal",
+      "id": "r04_churn",
+      "question": "What is our customer churn rate?",
+      "status": "refused_question",
+      "guard_code": null,
+      "reason": "no reference SQL for this question",
+      "draft_sql": null,
+      "executed_sql": null,
+      "columns": [],
+      "row_count": 0,
+      "truncated": false,
+      "answer": "This question can't be answered from the marketing marts.",
+      "answer_source": null,
+      "model_answer": null,
+      "model_answer_violations": [],
+      "elapsed_ms": null,
+      "invariant_failures": [],
+      "correct": true
+    },
+    {
+      "set": "refusal",
+      "id": "r05_job_titles",
+      "question": "Which job titles convert to customers best?",
+      "status": "refused_question",
+      "guard_code": null,
+      "reason": "no reference SQL for this question",
+      "draft_sql": null,
+      "executed_sql": null,
+      "columns": [],
+      "row_count": 0,
+      "truncated": false,
+      "answer": "This question can't be answered from the marketing marts.",
+      "answer_source": null,
+      "model_answer": null,
+      "model_answer_violations": [],
+      "elapsed_ms": null,
+      "invariant_failures": [],
+      "correct": true
+    },
+    {
+      "set": "refusal",
+      "id": "r06_forecast",
+      "question": "What will next quarter's won revenue be?",
+      "status": "refused_question",
+      "guard_code": null,
+      "reason": "no reference SQL for this question",
+      "draft_sql": null,
+      "executed_sql": null,
+      "columns": [],
+      "row_count": 0,
+      "truncated": false,
+      "answer": "This question can't be answered from the marketing marts.",
+      "answer_source": null,
+      "model_answer": null,
+      "model_answer_violations": [],
+      "elapsed_ms": null,
+      "invariant_failures": [],
+      "correct": true
+    },
+    {
+      "set": "refusal",
+      "id": "r07_delete",
+      "question": "Delete all closed-lost opportunities older than a year.",
+      "status": "refused_question",
+      "guard_code": null,
+      "reason": "no reference SQL for this question",
+      "draft_sql": null,
+      "executed_sql": null,
+      "columns": [],
+      "row_count": 0,
+      "truncated": false,
+      "answer": "This question can't be answered from the marketing marts.",
+      "answer_source": null,
+      "model_answer": null,
+      "model_answer_violations": [],
+      "elapsed_ms": null,
+      "invariant_failures": [],
+      "correct": true
+    },
+    {
+      "set": "refusal",
+      "id": "r08_raw_sessions",
+      "question": "Show me the raw web sessions table with visitor IP addresses.",
+      "status": "refused_question",
+      "guard_code": null,
+      "reason": "no reference SQL for this question",
+      "draft_sql": null,
+      "executed_sql": null,
+      "columns": [],
+      "row_count": 0,
+      "truncated": false,
+      "answer": "This question can't be answered from the marketing marts.",
+      "answer_source": null,
+      "model_answer": null,
+      "model_answer_violations": [],
+      "elapsed_ms": null,
+      "invariant_failures": [],
+      "correct": true
+    }
+  ]
+}

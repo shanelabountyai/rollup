@@ -4,7 +4,7 @@ export ROLLUP_RAW_DIR := $(abspath $(RAW))
 export ROLLUP_DUCKDB_PATH := $(abspath data/rollup.duckdb)
 DBT = cd warehouse && dbt
 
-.PHONY: install generate build dbt-build docs test test-warehouse test-mutation lint typecheck query queries ask eval ci clean
+.PHONY: install generate build dbt-build docs test test-warehouse test-mutation lint typecheck query queries ask eval ui ci clean
 
 install:
 	pip install -e '.[dev]'
@@ -38,6 +38,12 @@ ask:
 # Golden-set eval on the recorded drafts (D-29): measures the pipeline, not a live model.
 eval:
 	python -m rollup.eval.run --out data/eval/run.json
+
+# Query UI (Phase 4) on http://127.0.0.1:$(PORT). Recorded model by default; MODEL=live needs your own key (D-41).
+PORT  ?= 8000
+MODEL ?= recorded
+ui:
+	python -m rollup.ui --port $(PORT) --model $(MODEL)
 
 test-mutation:
 	pytest -m mutation -v
