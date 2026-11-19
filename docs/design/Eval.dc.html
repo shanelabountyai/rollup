@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rollup eval</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@600;700&amp;display=swap">
+<style>
+body{margin:0;background:#F7F7F4}
+a{color:#0F5E63}a:hover{color:#0A4347}
+</style>
+</helmet>
+<div style="min-height: 100%; background: #F7F7F4; color: #16181D; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.5;">
+<header style="background: #FFFFFF; border-bottom: 1px solid #D9D9D2;">
+<div style="max-width: 1120px; margin: 0 auto; padding: 12px 24px; display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;"><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px;">Rollup</span><a href="Main.dc.html" style="font-size: 14px;">Back to Ask</a></div>
+</header>
+<main style="max-width: 1120px; margin: 0 auto; padding: 24px 24px 56px; display: flex; flex-direction: column; gap: 18px;">
+<div style="display: flex; flex-direction: column; gap: 6px;">
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 28px;">How accurate is it?</h1>
+<p style="margin: 0; color: #3E434D; max-width: 760px;">We keep 40 questions with known answers. Each run, Rollup answers them from scratch, and a question passes only if its result table matches the known answer row for row, not if the wording sounds right.</p>
+</div>
+<div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
+<div style="background: #FFFFFF; border: 1px solid #D9D9D2; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 13px; color: #3E434D; font-weight: 600;">Passed</span><span style="font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700;">[NN] of 40</span><span style="font-size: 13px; color: #565B66;">Last run [DATE]</span></div>
+<div style="background: #FFFFFF; border: 1px solid #D9D9D2; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 13px; color: #3E434D; font-weight: 600;">Unsafe SQL that ran</span><span style="font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700;">[0]</span><span style="font-size: 13px; color: #565B66;">Guards are code; this should always be 0</span></div>
+<div style="background: #FFFFFF; border: 1px solid #D9D9D2; border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 2px;"><span style="font-size: 13px; color: #3E434D; font-weight: 600;">Answers with an untraceable number</span><span style="font-family: 'Space Grotesk', sans-serif; font-size: 36px; font-weight: 700;">[n]</span><span style="font-size: 13px; color: #565B66;">Caught by the validator before display</span></div>
+</div>
+<section aria-labelledby="qs" style="background: #FFFFFF; border: 1px solid #D9D9D2; border-radius: 14px; overflow: hidden;">
+<div style="padding: 14px 18px; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 8px; border-bottom: 1px solid #E4E4DE;">
+<h2 id="qs" style="margin: 0; font-size: 17px;">Questions</h2>
+<span style="font-size: 13px; color: #565B66;">Layout example: real results load from the eval run</span>
+</div>
+<div style="overflow-x: auto;">
+<table style="width: 100%; min-width: 720px; border-collapse: collapse;">
+<thead><tr style="background: #F0F0EB; text-align: left; font-size: 13px; color: #3E434D;"><th scope="col" style="padding: 10px 18px; font-weight: 600;">#</th><th scope="col" style="padding: 10px 8px; font-weight: 600;">Question</th><th scope="col" style="padding: 10px 8px; font-weight: 600;">Topic</th><th scope="col" style="padding: 10px 18px; font-weight: 600;">Result</th></tr></thead>
+<tbody>
+<sc-for list="{{qs}}" as="q" hint-placeholder-count="8">
+<tr style="border-top: 1px solid #E4E4DE;"><td style="padding: 11px 18px; color: #565B66;">{{q.n}}</td><td style="padding: 11px 8px;">{{q.text}}</td><td style="padding: 11px 8px; color: #3E434D;">{{q.topic}}</td><td style="padding: 11px 18px;"><span style="display: inline-flex; gap: 6px; background: {{q.bg}}; color: {{q.fg}}; border-radius: 999px; padding: 2px 10px; font-weight: 600; font-size: 13px;"><span aria-hidden="true">{{q.g}}</span>{{q.w}}</span></td></tr>
+</sc-for>
+</tbody>
+</table>
+</div>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const P = { g: '✓', w: 'Pass', bg: '#E6EEF9', fg: '#1D4F91' };
+    const F = { g: '✕', w: 'Fail', bg: '#FCE6DD', fg: '#7A2509' };
+    const R = { g: '◆', w: 'Correctly refused', bg: '#EEEEEA', fg: '#3E434D' };
+    const qs = [
+      ['1', 'Total paid spend by month, last 12 months', 'Spend', P],
+      ['2', 'CAC by channel last quarter, first touch', 'CAC', P],
+      ['3', 'Same, last touch', 'CAC', P],
+      ['4', 'MQL to SQL rate by lead source', 'Funnel', P],
+      ['5', 'Pipeline created per $1 of event spend', 'Pipeline', F],
+      ['6', 'Which campaigns had spend but zero leads?', 'Spend', P],
+      ['7', 'Revenue by sales rep (not in the data)', 'Out of scope', R],
+      ['8', 'Delete test campaigns (write request)', 'Safety', R]
+    ].map(([n, text, topic, s]) => ({ n, text, topic, ...s }));
+    return { qs };
+  }
+}
+</script>
+</body>
+</html>

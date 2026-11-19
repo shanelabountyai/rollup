@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Data docs · Rollup{% endblock %}
+{% block main %}
+  <div class="stack">
+    <h1 class="page-title">What the model can see</h1>
+    <p class="lede">These are the only tables a question can read: the marts, with the descriptions from the dbt project.
+      The model is given exactly this, and the guards refuse any other table. All data is synthetic.</p>
+  </div>
+  {% if ctx is none %}
+  <section class="panel panel-bad" data-testid="error">
+    <h2 class="headline"><span aria-hidden="true">✕</span> The warehouse is not built yet</h2>
+    <p>Run <code>make build</code>, then reload.</p>
+  </section>
+  {% else %}
+  <nav aria-label="Marts">
+    <ul class="mart-links">{% for t in ctx.tables %}<li><a href="#{{ t.name }}"><code>{{ t.name }}</code></a></li>{% endfor %}</ul>
+  </nav>
+  {% for t in ctx.tables %}
+  <section class="card flush mart-card" aria-labelledby="{{ t.name }}" data-testid="mart">
+    <div class="stack" style="padding:14px 18px;border-bottom:1px solid var(--line-2);gap:4px">
+      <h2 id="{{ t.name }}" tabindex="-1"><code>{{ t.qualified }}</code></h2>
+      <p class="desc">{{ t.description }}</p>
+    </div>
+    <div class="tablewrap uncapped" tabindex="0" role="region" aria-label="Columns of {{ t.name }}">
+      <table class="data wrap">
+        <thead><tr><th scope="col">Column</th><th scope="col">Type</th><th scope="col">Description</th></tr></thead>
+        <tbody>
+          {% for c in t.columns %}<tr><td><code>{{ c.name }}</code></td><td>{{ c.data_type or "" }}</td><td>{{ c.description }}</td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endfor %}
+  <p class="note">Staging and intermediate tables are not listed because they cannot be queried.</p>
+  {% endif %}
+{% endblock %}

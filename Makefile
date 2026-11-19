@@ -4,7 +4,7 @@ export ROLLUP_RAW_DIR := $(abspath $(RAW))
 export ROLLUP_DUCKDB_PATH := $(abspath data/rollup.duckdb)
 DBT = cd warehouse && dbt
 
-.PHONY: install generate build dbt-build docs test test-warehouse test-mutation lint typecheck query queries ask eval ui ci clean
+.PHONY: install generate build dbt-build docs test test-warehouse test-mutation lint typecheck query queries ask eval ui a11y ci clean
 
 install:
 	pip install -e '.[dev]'
@@ -44,6 +44,11 @@ PORT  ?= 8000
 MODEL ?= recorded
 ui:
 	python -m rollup.ui --port $(PORT) --model $(MODEL)
+
+# Accessibility check of a running `make ui` (local only, not in ci: needs Chromium + axe-core, D-56).
+AXE ?= node_modules/axe-core/axe.min.js
+a11y:
+	python scripts/a11y_check.py --base http://127.0.0.1:$(PORT) --axe $(AXE)
 
 test-mutation:
 	pytest -m mutation -v

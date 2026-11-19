@@ -4,15 +4,17 @@ Marketing warehouse (dbt + DuckDB) with a safe text-to-SQL layer and a small que
 SQL, see whether the safety checks passed, get the table, a chart, and an answer that cites only numbers in the
 result.
 
-Build-log #27. Status: **Phase 4** (FastAPI + HTMX query UI, shape-based charts, this case study), on branch
-`phase-4` pending review. Phases 1–3 (generator, dbt models, guards, guarded runner, model interface, RU-03
-validator, golden-set eval) are on `main`. Everything in CI runs on **recorded** model responses; no live LLM is
+Build-log #27. Status: **Phase 4 merged** (PR #6, 2026-11-18): FastAPI + HTMX query UI, shape-based charts and
+this case study. All four PRD phases are on `main` (generator, dbt models, guards, guarded runner, model interface, RU-03
+validator, golden-set eval, UI). Everything in CI runs on **recorded** model responses; no live LLM is
 called by the build (D-29). Spec in `docs/PRD.md`, decisions in `docs/DECISIONS.md`, what's next in `NEXT.md`.
 
 **All data is synthetic**: a seeded generator invents 18 months of a fictional B2B company's ad spend, web
 sessions, form fills and CRM records. No client data, no real company.
 
-![Rollup query UI: drafted SQL, guard result, table, validated answer and line chart](docs/img/ui-answered.png)
+![Rollup Ask page: validated answer with its numbers linked to result cells, table, bar chart, the SQL that ran and the guard checklist (synthetic data)](docs/img/ui-answered.png)
+
+The UI follows the Claude Design artboards in `docs/design/` (design pass, D-51..D-61): **Ask** (`/`), **How accurate is it?** (`/eval`, numbers from the committed run file) and **Data docs** (`/data`, the marts the model can see). `make a11y` runs axe-core against a running `make ui` (local; see `scripts/a11y_check.py`).
 
 ## Case study
 

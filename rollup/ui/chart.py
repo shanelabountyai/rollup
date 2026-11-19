@@ -30,7 +30,7 @@ from html import escape
 from typing import Any, Literal
 
 MAX_BARS = 30
-WIDTH = 640
+WIDTH = 300  # viewBox width; sized for the chart card beside the table (design pass, D-55)
 
 ChartKind = Literal["line", "bar", "none"]
 
@@ -147,7 +147,7 @@ def _text(x: float, y: float, s: str, *, anchor: str = "start", cls: str = "lbl"
 
 
 def _bar_svg(spec: ChartSpec) -> str:
-    row_h, bar_h, pad, value_w = 34, 14, 8, 110
+    row_h, bar_h, pad, value_w = 36, 14, 8, 92
     lo, hi = min(0.0, *spec.values), max(0.0, *spec.values)
     span = (hi - lo) or 1.0
     plot_w = WIDTH - 2 * pad - value_w
@@ -169,7 +169,7 @@ def _bar_svg(spec: ChartSpec) -> str:
 
 
 def _line_svg(spec: ChartSpec) -> str:
-    height, pad_x, top, bottom = 260, 16, 24, 40
+    height, pad_x, top, bottom = 230, 16, 24, 40
     plot_w, plot_h = WIDTH - 2 * pad_x, height - top - bottom
     lo, hi = min(spec.values), max(spec.values)
     span = (hi - lo) or 1.0
