@@ -37,7 +37,7 @@
         <h3 id="res-h">Result</h3>
         <span class="note" data-testid="row-meta">{{ r.rows|length }} {{ "row" if r.rows|length == 1 else "rows" }}{% if r.truncated %}, cut at the row cap{% endif %} · synthetic data</span>
       </div>
-      <div class="tablewrap" tabindex="0" role="region" aria-labelledby="res-h">
+      <div class="tablewrap" tabindex="0" role="region" aria-label="Result table, scrollable">
         <table class="data" data-testid="result-table">
           <thead><tr>{% for c in r.columns %}<th scope="col"{% if r.numeric_cols[loop.index0] %} class="num"{% endif %}>{{ c }}</th>{% endfor %}</tr></thead>
           <tbody>
