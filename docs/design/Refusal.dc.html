@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Rollup refused a query</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@600;700&amp;display=swap">
+<style>
+body{margin:0;background:#F7F7F4}
+a{color:#0F5E63}a:hover{color:#0A4347}
+</style>
+</helmet>
+<div style="min-height: 100%; background: #F7F7F4; color: #16181D; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.5;">
+<header style="background: #FFFFFF; border-bottom: 1px solid #D9D9D2;">
+<div style="max-width: 1120px; margin: 0 auto; padding: 12px 24px;"><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px;">Rollup</span></div>
+</header>
+<main style="max-width: 1120px; margin: 0 auto; padding: 24px 24px 56px; display: flex; flex-direction: column; gap: 18px;">
+<div style="display: flex; flex-direction: column; gap: 4px;">
+<span style="font-size: 13px; color: #565B66;">You asked</span>
+<h1 style="margin: 0; font-family: 'Space Grotesk', sans-serif; font-size: 22px;">"Delete the test campaigns from last month and show me what's left"</h1>
+</div>
+<section role="alert" style="background: #FCE6DD; color: #7A2509; border: 2px solid #9A2E0B; border-radius: 14px; padding: 18px 22px; display: flex; flex-direction: column; gap: 6px;">
+<span style="font-family: 'Space Grotesk', sans-serif; font-size: 24px; font-weight: 700;">✕ Not run: Rollup only reads data</span>
+<span>The drafted SQL included a DELETE. Rollup runs a single SELECT on a read-only connection, so nothing was changed and nothing ran. Ask the reporting question on its own, for example "Show last month's campaigns, excluding ones named test".</span>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D9D9D2; border-radius: 14px; padding: 18px; display: flex; flex-wrap: wrap; gap: 18px;">
+<div style="flex: 1 1 420px; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+<h2 style="margin: 0; font-size: 17px;">Drafted SQL (not run)</h2>
+<pre style="margin: 0; background: #16181D; color: #E6E7E3; border-radius: 10px; padding: 14px 16px; font-family: ui-monospace, Menlo, monospace; font-size: 13px; line-height: 1.55; overflow-x: auto;">DELETE FROM dim_campaign WHERE name ILIKE '%test%';
+SELECT * FROM fct_spend_daily WHERE …</pre>
+</div>
+<div style="flex: 1 1 300px; min-width: 0; display: flex; flex-direction: column; gap: 8px;">
+<h3 style="margin: 0; font-size: 15px;">Guards</h3>
+<ul style="margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 6px; font-size: 14px;">
+<li style="display: flex; gap: 8px; color: #7A2509;"><span aria-hidden="true" style="font-weight: 700;">✕</span><span><strong>Refused:</strong> one SELECT statement only (found 2 statements, one a DELETE)</span></li>
+<li style="display: flex; gap: 8px; color: #7A2509;"><span aria-hidden="true" style="font-weight: 700;">✕</span><span><strong>Refused:</strong> dim_campaign is not on the allowlist</span></li>
+<li style="display: flex; gap: 8px; color: #7A2509;"><span aria-hidden="true" style="font-weight: 700;">✕</span><span><strong>Refused:</strong> SELECT * on a fact table</span></li>
+<li style="display: flex; gap: 8px; color: #565B66;"><span aria-hidden="true">–</span><span><strong>Not reached:</strong> row limit, read-only connection, 5 s timeout</span></li>
+</ul>
+</div>
+</section>
+<section style="background: #FFFFFF; border: 1px solid #D9D9D2; border-radius: 14px; padding: 16px 18px; display: flex; flex-direction: column; gap: 6px;">
+<h2 style="margin: 0; font-size: 16px;">The other kind of no</h2>
+<p style="margin: 0; color: #3E434D;">When the data can't answer, Rollup says so instead of guessing, for example: "The warehouse has no revenue by sales rep, so I can't rank reps. It does have pipeline by channel."</p>
+</section>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":820}}'>
+class Component extends DCLogic {
+  renderVals() { return {}; }
+}
+</script>
+</body>
+</html>

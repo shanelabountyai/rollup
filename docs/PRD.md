@@ -36,3 +36,29 @@ reproducible; RU-05 dbt tests all pass on the generated data.
 
 **Phases:** 1 generator + dbt models + tests (no LLM) → 2 guards + SQL runner with hand-written SQL → 3 LLM
 drafting + answer validator + golden-set eval → 4 UI + charts + README case study.
+
+**Design, UX and accessibility requirements** (added 2026-11-18 by the design pass, `docs/design/`; review findings
+referenced as Design-n / UX-n / A11y-n in the design-pass PR; each is tested where marked):
+- DUX-01 Every page has the header nav (Ask, eval, Data docs) with `aria-current`, one `h1`, a skip link, `lang`, and
+  a label for every input (`test_page_structure_without_warehouse`, `test_data_page_lists_exactly_the_marts`).
+- DUX-02 Every status is shown as word + glyph + colour, never colour alone; the outcome headline of a refusal or error
+  is a heading (A11y-6; `test_refusal_pages_say_it_in_words_glyphs_and_colour`).
+- DUX-03 Text contrast >= 4.5:1 and borders/focus >= 3:1 in light and dark; axe-core reports 0 WCAG 2.1 A/AA
+  violations on every page and state at 1280 and 390 px in both schemes (`make a11y`, local, D-56).
+- DUX-04 One announcement per result: no live region wraps the result; after a result arrives, focus moves to its
+  heading, which includes the status; an input error marks the input `aria-invalid` and points to the message on the
+  htmx and the no-JS path (A11y-1, A11y-3, Design-4).
+- DUX-05 A recorded question that the committed eval run scores as a miss says so on the Ask page ("Known eval miss",
+  linked to the eval), so passing the guards and RU-03 is never read as "correct" (UX-1;
+  `test_known_eval_misses_are_flagged_on_the_ask_page`).
+- DUX-06 Highlighting the answer's numbers never changes its text; a linked number points to a cell of equal value,
+  which is marked for assistive tech too (D-54; `test_highlight_never_changes_the_text`,
+  `test_every_highlight_points_at_a_real_cell`).
+- DUX-07 The eval page shows only numbers from a committed run file and never renders answers, reasons or rejected
+  paragraphs (D-57; `test_eval_page_shows_the_committed_run_and_nothing_it_must_not`).
+- DUX-08 No horizontal page scroll at 390 px (or 320 px); long free text wraps (UX-3).
+- DUX-09 Interactive controls are at least 44 px tall, except links inside running text.
+- DUX-10 An over-long question reaches the server's "too long" message; the browser does not cut it silently (UX-2).
+- DUX-11 Results that involve touch credit say that first touch is primary and last touch is a second column (owner
+  call 2026-11-14, Design-5; `test_attribution_note_on_touch_results`).
+- DUX-12 No sample value from an artboard ships; every number shown comes from a result set or a committed run file.

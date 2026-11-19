@@ -32,7 +32,10 @@ def main(argv: Sequence[str] | None = None) -> int:
     except ModelUnavailable as e:
         print(f"live model unavailable: {e}", file=sys.stderr)
         return 2
-    app = create_app(model, db_path=args.db, manifest_path=args.manifest)
+    from rollup.ui.app import LOCAL_HOSTS
+
+    hosts = LOCAL_HOSTS if args.host in LOCAL_HOSTS else (*LOCAL_HOSTS, args.host)
+    app = create_app(model, db_path=args.db, manifest_path=args.manifest, allowed_hosts=hosts)
     print(f"Rollup UI on http://{args.host}:{args.port}  (model: {model.name})")
     uvicorn.run(app, host=args.host, port=args.port, log_level="info")
     return 0

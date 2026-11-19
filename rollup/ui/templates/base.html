@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Rollup{% endblock %}</title>
+<link rel="stylesheet" href="/static/rollup.css">
+<script src="/static/htmx.min.js"></script>
+</head>
+<body>
+<a class="skip" href="#content">Skip to content</a>
+<header class="site-header">
+  <div class="inner">
+    <span class="brand"><a class="name" href="/">Rollup</a><span class="tag">Synthetic B2B company · 18 months of data</span></span>
+    <nav class="site-nav" aria-label="Main">
+      <ul>
+        <li><a href="/"{% if active == "ask" %} aria-current="page"{% endif %}>Ask</a></li>
+        <li><a href="/eval"{% if active == "eval" %} aria-current="page"{% endif %}>How accurate is it? (eval)</a></li>
+        <li><a href="/data"{% if active == "data" %} aria-current="page"{% endif %}>Data docs</a></li>
+      </ul>
+    </nav>
+  </div>
+</header>
+<main id="content" tabindex="-1">
+{% block main %}{% endblock %}
+</main>
+{% block scripts %}{% endblock %}
+</body>
+</html>

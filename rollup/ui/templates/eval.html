@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}How accurate is it? · Rollup{% endblock %}
+{% block main %}
+  <div class="stack">
+    <h1 class="page-title">How accurate is it?</h1>
+    <p class="lede">We keep {{ ev.golden_total if ev else "a set of" }} questions with known answers{% if ev %}, plus {{ ev.refusal_total }} the data can't answer{% endif %}. Each run, Rollup answers them
+      from scratch, and a question passes only if its result table matches the known answer row for row, not if the
+      wording sounds right. A question from the second set passes only if no number is shown.</p>
+  </div>
+  {% if ev is none %}
+  <section class="panel panel-neutral" data-testid="eval-missing">
+    <h2 class="headline"><span aria-hidden="true">◆</span> No committed run file</h2>
+    <p>The eval page reads <code>docs/eval/recorded-run.json</code>, which is not in this checkout. Run <code>make eval</code> to produce a run.</p>
+  </section>
+  {% else %}
+  <p class="note" data-testid="eval-source">From <code>{{ ev.source }}</code>, the committed run on the
+    {{ ev.model or "recorded" }} model. Those drafts were written to exercise the pipeline (including deliberately wrong
+    ones), so these numbers measure the pipeline's behaviour, not a model's skill.</p>
+  <div class="stats">
+    <div class="stat"><span class="k">Passed</span><span class="v" data-testid="eval-golden">{{ ev.golden_equivalent }} of {{ ev.golden_total }}</span><span class="s">Golden questions, result-set equivalent</span></div>
+    <div class="stat"><span class="k">Refusal set</span><span class="v" data-testid="eval-refusal">{{ ev.refusal_correct }} of {{ ev.refusal_total }}</span><span class="s">Showed no numbers, as they should</span></div>
+    <div class="stat"><span class="k">Invariant failures</span><span class="v" data-testid="eval-invariants">{{ ev.invariant_failures }}</span><span class="s">Refused SQL that ran, or a shown number not in its result. DB file unchanged: {{ "yes" if ev.db_unchanged else "no" }}</span></div>
+    <div class="stat"><span class="k">Answers with an untraceable number</span><span class="v" data-testid="eval-ru03">{{ ev.rejected_ru03 }}</span><span class="s">Caught by the validator before display; the table-quoting fallback was shown</span></div>
+  </div>
+  <section class="card flush" aria-labelledby="qs">
+    <div class="card-head">
+      <h2 id="qs">Questions</h2>
+      <span class="note">{{ ev.rows|length }} questions from the run file</span>
+    </div>
+    <div class="tablewrap uncapped" tabindex="0" role="region" aria-label="Eval questions table, scrollable">
+      <table class="data wrap" data-testid="eval-table">
+        <thead><tr><th scope="col">#</th><th scope="col">Question</th><th scope="col">What happened</th><th scope="col">Result</th></tr></thead>
+        <tbody>
+          {% for q in ev.rows %}<tr><td>{{ q.n }}</td><td>{{ q.question }}</td><td>{{ q.outcome }}</td><td><span class="badge badge-{{ q.result }}"><span aria-hidden="true">{% if q.result == "pass" %}✓{% elif q.result == "fail" %}✕{% else %}◆{% endif %}</span>{{ q.result_label }}</span></td></tr>{% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </section>
+  {% endif %}
+{% endblock %}
