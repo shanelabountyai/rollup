@@ -42,7 +42,9 @@ def _tag(page: str, testid: str) -> str | None:
 
 
 def _text(fragment: str | None) -> str:
-    return "" if fragment is None else html.unescape(re.sub(r"<[^>]+>", " ", fragment)).strip()
+    """Visible text of a fragment. Tags are removed without adding spaces (D-52): the answer's numbers sit inside
+    <mark>/<a> highlights, and the text a reader sees must equal ``AskResult.answer`` exactly."""
+    return "" if fragment is None else html.unescape(re.sub(r"<[^>]+>", "", fragment)).strip()
 
 
 # ---- unit: model selection (no warehouse) --------------------------------------------------------------------

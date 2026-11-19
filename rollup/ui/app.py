@@ -21,7 +21,7 @@ import os
 import re
 import threading
 from collections.abc import Awaitable, Callable, Sequence
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any
 from urllib.parse import urlsplit
@@ -36,7 +36,16 @@ from rollup.ask import AskResult, ask
 from rollup.llm import DEFAULT_RECORDING, DraftModel, RecordedModel
 from rollup.runner import default_db_path, open_readonly
 from rollup.schema_context import SchemaContext, load_context
-from rollup.ui.chart import choose_chart, fmt_cell, render_svg
+from rollup.ui.chart import choose_chart, fmt_cell, is_number, render_svg
+from rollup.ui.views import (
+    TIMEOUT_S,
+    guard_explainer,
+    highlight_answer,
+    load_eval,
+    marts_summary,
+    passed_checks,
+    starters,
+)
 
 UI_DIR = Path(__file__).resolve().parent
 MAX_QUESTION_CHARS = 500
@@ -92,6 +101,15 @@ class ResultView:
     chart_kind: str
     chart_reason: str
     chart_svg: Markup
+    # Display-only additions for the design pass (docs/design/*.dc.html); none changes what is shown as data.
+    # ``answer`` with its numbers highlighted; the same text once the tags are stripped
+    answer_html: Markup = field(default_factory=Markup)
+    cited: frozenset[tuple[int, int]] = frozenset()  # (row, column) cells a highlighted number links to
+    numeric_cols: tuple[bool, ...] = ()  # right-align columns whose non-NULL cells are all numbers
+    checks: tuple[str, ...] = ()  # the passed-guard list for an answered question
+    chart_title: str = ""
+    explain_title: str = ""  # plain-words headline for a guard refusal
+    explain_body: str = ""
 
 
 _DIGIT = re.compile(r"\d")
@@ -128,11 +146,23 @@ def build_view(r: AskResult) -> ResultView:
     else:
         guard = "not reached"
     rejected = bool(r.answered and r.validation is not None and not r.validation.ok)
+    chart_title = ""
     if r.answered:
         spec = choose_chart(r.columns, r.rows, truncated=r.truncated)
         chart_kind, chart_reason, svg = spec.kind, spec.reason, render_svg(spec)
+        if spec.kind != "none":
+            chart_title = f"{spec.y_column} by {spec.x_column}"
+        lit = highlight_answer(r.answer, r.columns, r.rows) if r.answer_source is not None else None
     else:
         chart_kind, chart_reason, svg = "none", "No result, so no chart.", ""
+        lit = None
+    numeric = tuple(
+        bool(r.rows)
+        and all(v is None or is_number(v) for v in (row[j] for row in r.rows))
+        and any(row[j] is not None for row in r.rows)
+        for j in range(len(r.columns))
+    )
+    explain_title, explain_body = guard_explainer(r.guard_code) if r.status == "refused_guard" else ("", "")
     return ResultView(
         question=r.question,
         status=r.status,
@@ -153,6 +183,15 @@ def build_view(r: AskResult) -> ResultView:
         chart_kind=chart_kind,
         chart_reason=chart_reason,
         chart_svg=Markup(svg),  # built by chart.render_svg, which escapes every cell and column name
+        answer_html=lit.html if lit is not None else Markup("") + r.answer,  # Markup + str escapes the str
+        cited=frozenset(lit.cited) if lit is not None else frozenset(),
+        numeric_cols=numeric,
+        checks=tuple(passed_checks(r.executed_sql, None if r.elapsed_ms is None else round(r.elapsed_ms, 1)))
+        if r.answered
+        else (),
+        chart_title=chart_title,
+        explain_title=explain_title,
+        explain_body=explain_body,
     )
 
 
@@ -193,11 +232,14 @@ def create_app(
     db_path: Path | str | None = None,
     manifest_path: Path | str | None = None,
     allowed_hosts: Sequence[str] = LOCAL_HOSTS,
+    eval_run_path: Path | None = None,
 ) -> FastAPI:
     the_model = model if model is not None else select_model()
     db = Path(db_path) if db_path is not None else default_db_path()
     templates = Jinja2Templates(directory=str(UI_DIR / "templates"))
     examples = recorded_questions() if isinstance(the_model, RecordedModel) else []
+    starter_list = starters()
+    eval_path = eval_run_path
     ctx_lock = threading.Lock()
     ctx_cache: list[SchemaContext] = []
 
@@ -219,17 +261,40 @@ def create_app(
 
     app.mount("/static", StaticFiles(directory=str(UI_DIR / "static")), name="static")
 
+    recorded = isinstance(the_model, RecordedModel)
+
     def page_context(**extra: Any) -> dict[str, Any]:
         return {
+            "active": "ask",
             "model_name": the_model.name,
-            "recorded": isinstance(the_model, RecordedModel),
+            "model_label": "the recorded model (no API key in this build)" if recorded else f"{the_model.name}",
+            "recorded": recorded,
             "examples": examples,
+            "starters": starter_list,
+            "timeout_s": f"{TIMEOUT_S:g}",
+            "marts": [],
+            "error_title": None,
             **extra,
         }
 
     @app.get("/", response_class=HTMLResponse)
     def index(request: Request) -> HTMLResponse:
         return templates.TemplateResponse(request, "index.html", page_context(result=None, error=None, question=""))
+
+    @app.get("/eval", response_class=HTMLResponse)
+    def eval_page(request: Request) -> HTMLResponse:
+        view = load_eval(eval_path) if eval_path is not None else load_eval()
+        return templates.TemplateResponse(request, "eval.html", page_context(active="eval", ev=view))
+
+    @app.get("/data", response_class=HTMLResponse)
+    def data_page(request: Request) -> HTMLResponse:
+        try:
+            ctx = context()
+        except FileNotFoundError:
+            return templates.TemplateResponse(
+                request, "data.html", page_context(active="data", ctx=None), status_code=503
+            )
+        return templates.TemplateResponse(request, "data.html", page_context(active="data", ctx=ctx))
 
     @app.get("/healthz")
     def healthz() -> JSONResponse:
@@ -242,27 +307,33 @@ def create_app(
         result: ResultView | None = None
         error: str | None = None
         status_code = 200
+        error_title: str | None = None
+        marts: list[dict[str, str]] = []
         if not q:
-            error, status_code = "Type a question first.", 400
+            error, status_code, error_title = "Type a question first.", 400, "No question yet"
         elif len(q) > MAX_QUESTION_CHARS:
             error, status_code = f"Questions are limited to {MAX_QUESTION_CHARS} characters.", 400
+            error_title = "That question is too long"
         else:
             try:
                 ctx = context()
                 con = open_readonly(db)
             except FileNotFoundError:
                 error, status_code = "The warehouse is not built yet. Run `make build`, then reload.", 503
+                error_title = "The warehouse is not built yet"
             else:
                 try:
                     result = build_view(ask(q, the_model, con, ctx))
                 finally:
                     con.close()
+                if result.status == "refused_question":
+                    marts = marts_summary(ctx)
         # htmx does not swap 4xx/5xx responses by default, so a partial carries its error with a 200.
         name = "_result.html" if partial else "index.html"
         return templates.TemplateResponse(
             request,
             name,
-            page_context(result=result, error=error, question=q),
+            page_context(result=result, error=error, question=q, error_title=error_title, marts=marts),
             status_code=200 if partial else status_code,
         )
 

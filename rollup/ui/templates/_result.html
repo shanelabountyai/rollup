@@ -1,75 +1,170 @@
 {% if error %}
-<div class="card error" data-testid="error">{{ error }}</div>
+<section class="panel panel-bad" role="alert" data-testid="error" id="q-error">
+  <h2 class="headline" id="result-heading" tabindex="-1"><span aria-hidden="true">✕</span> {{ error_title or "Not asked" }}</h2>
+  <p>{{ error }}</p>
+</section>
 {% elif result %}
 {% set r = result %}
-<section data-testid="result" data-status="{{ r.status }}">
-  <div class="card">
-    <h2>Question</h2>
-    <div>{{ r.question }}</div>
-    <div class="meta">Status: <span data-testid="status">{{ r.status }}</span> — {{ r.status_label }}</div>
-  </div>
-
-  <div class="card">
-    <h2>Drafted SQL</h2>
-    {% if r.draft_sql %}<pre data-testid="draft-sql">{{ r.draft_sql }}</pre>
-    {% else %}<div class="meta">No SQL was drafted.</div>{% endif %}
-  </div>
-
-  <div class="card">
-    <h2>Guards</h2>
-    {% if r.guard == "passed" %}
-      <span class="badge passed" data-testid="guard">passed</span>
-      <span class="meta">single SELECT, marts allowlist, no * on fact tables, row cap, read-only, timeout</span>
-      <div class="meta">Executed SQL (regenerated from the checked tree):</div>
-      <pre data-testid="executed-sql">{{ r.executed_sql }}</pre>
-    {% elif r.guard == "refused" %}
-      <span class="badge refused" data-testid="guard">refused</span>
-      <code data-testid="guard-code">{{ r.guard_code }}</code>
-      <div data-testid="reason">{{ r.reason }}</div>
-    {% else %}
-      <span class="badge notreached" data-testid="guard">not reached</span>
-      {% if r.reason %}<div data-testid="reason">{{ r.reason }}</div>{% endif %}
-    {% endif %}
+<section class="stack" data-testid="result" data-status="{{ r.status }}" aria-labelledby="result-heading" style="gap:18px">
+  <div class="asked">
+    <span class="label">You asked</span>
+    <h2 class="q" id="result-heading" tabindex="-1">“{{ r.question }}”</h2>
+    <span class="visually-hidden">Status: <span data-testid="status">{{ r.status }}</span> — {{ r.status_label }}</span>
   </div>
 
   {% if r.status == "answered" %}
-  <div class="card">
-    <h2>Result</h2>
-    <div class="meta" data-testid="row-meta">{{ r.rows|length }} row(s){% if r.truncated %}, truncated at the row cap{% endif %}{% if r.elapsed_ms is not none %} · {{ r.elapsed_ms }} ms{% endif %}</div>
-    <div class="tablewrap">
-      <table data-testid="result-table">
-        <thead><tr>{% for c in r.columns %}<th>{{ c }}</th>{% endfor %}</tr></thead>
-        <tbody>
-          {% for row in r.rows %}<tr>{% for v in row %}<td>{{ v }}</td>{% endfor %}</tr>{% endfor %}
-        </tbody>
-      </table>
+  {# ---- Main.dc.html: answer, result + chart, SQL + guards ---- #}
+  <section class="card" aria-labelledby="ans-h">
+    <div class="card-head">
+      <h3 id="ans-h">Answer</h3>
+      <span class="pill">Every number below is checked against the result table</span>
     </div>
-  </div>
-  {% endif %}
-
-  <div class="card">
-    <h2>Answer</h2>
-    <p class="answer" data-testid="answer">{{ r.answer }}</p>
-    {% if r.status == "answered" %}
-      {% if r.ru03_rejected %}
-      <div class="warn" data-testid="ru03-rejected">The model's paragraph was rejected by the RU-03 validator
-        ({{ r.ru03_violation_count }} {{ "number" if r.ru03_violation_count == 1 else "numbers" }} not in the result)
-        and is not shown. The paragraph above quotes result cells only.</div>
-      {% else %}
-      <div class="meta" data-testid="answer-source">Source: {{ r.answer_source }} paragraph; every number in it is in
-        the result (RU-03).</div>
-      {% endif %}
+    <p class="answer" data-testid="answer">{{ r.answer_html }}</p>
+    {% if r.ru03_rejected %}
+    <div class="replaced" data-testid="ru03-rejected"><span class="g" aria-hidden="true">▲</span><span><strong>Replaced:</strong>
+      the model's paragraph had {{ r.ru03_violation_count }} {{ "number" if r.ru03_violation_count == 1 else "numbers" }}
+      that {{ "is" if r.ru03_violation_count == 1 else "are" }} not in the result (RU-03), so it is not shown. The paragraph
+      above quotes result cells only.</span></div>
     {% else %}
-      <div class="meta">Refusals show no numbers from the data.</div>
+    <p class="note" data-testid="answer-source">Written by the {{ r.answer_source }}; every number in it is in the result
+      (RU-03). Highlighted numbers link to their cell.</p>
     {% endif %}
+  </section>
+
+  <div class="split">
+    <section class="card flush wide" aria-labelledby="res-h">
+      <div class="card-head">
+        <h3 id="res-h">Result</h3>
+        <span class="note" data-testid="row-meta">{{ r.rows|length }} {{ "row" if r.rows|length == 1 else "rows" }}{% if r.truncated %}, cut at the row cap{% endif %} · synthetic data</span>
+      </div>
+      <div class="tablewrap" tabindex="0" role="region" aria-labelledby="res-h">
+        <table class="data" data-testid="result-table">
+          <thead><tr>{% for c in r.columns %}<th scope="col"{% if r.numeric_cols[loop.index0] %} class="num"{% endif %}>{{ c }}</th>{% endfor %}</tr></thead>
+          <tbody>
+            {% for row in r.rows %}{% set i = loop.index0 %}<tr>{% for v in row %}{% set j = loop.index0 %}<td id="cell-{{ i }}-{{ j }}"{% if r.numeric_cols[j] or (i, j) in r.cited %} class="{% if r.numeric_cols[j] %}num{% endif %}{% if (i, j) in r.cited %} cited{% endif %}"{% endif %}>{{ v }}</td>{% endfor %}</tr>{% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </section>
+    <section class="card narrow" aria-labelledby="ch-h">
+      <h3 id="ch-h">{% if r.chart_kind != "none" %}{{ r.chart_title }}{% else %}Chart{% endif %}</h3>
+      <p class="note" data-testid="chart-reason" data-chart="{{ r.chart_kind }}">{% if r.chart_kind == "none" %}<span aria-hidden="true">–</span> No chart: {% endif %}{{ r.chart_reason }} Picked by result shape, in code.</p>
+      {% if r.chart_svg %}<div data-testid="chart">{{ r.chart_svg }}</div>{% endif %}
+    </section>
   </div>
 
-  {% if r.status == "answered" %}
-  <div class="card">
-    <h2>Chart</h2>
-    <div class="meta" data-testid="chart-reason" data-chart="{{ r.chart_kind }}">{{ r.chart_reason }}</div>
-    {% if r.chart_svg %}<div data-testid="chart">{{ r.chart_svg }}</div>{% endif %}
-  </div>
+  <section class="card split" aria-labelledby="how-h" style="flex-direction:row;gap:18px">
+    <div class="stack" style="flex:1 1 460px;min-width:0;gap:8px">
+      <div class="card-head">
+        <h3 id="how-h">The SQL that ran</h3>
+        <span class="tag-dashed">Drafted by {{ model_label }}</span>
+      </div>
+      <pre class="sql" data-testid="executed-sql">{{ r.executed_sql }}</pre>
+      <p class="note">Regenerated from the checked syntax tree, so what ran is what was checked.</p>
+      <details class="drafted">
+        <summary>SQL as the model drafted it</summary>
+        <pre class="sql" data-testid="draft-sql">{{ r.draft_sql }}</pre>
+      </details>
+    </div>
+    <div class="stack" style="flex:1 1 300px;min-width:0;gap:8px">
+      <h4 style="margin:0;font-size:15px">Guards (checked in code, before it ran)</h4>
+      <p class="visually-hidden">Guard result: <span data-testid="guard">passed</span></p>
+      <ul class="guards">
+        {% for g in r.checks %}<li class="g-pass"><span class="g" aria-hidden="true">✓</span><span><strong class="guard-word">Passed:</strong> {{ g }}</span></li>{% endfor %}
+      </ul>
+    </div>
+  </section>
+
+  {% elif r.status == "refused_guard" %}
+  {# ---- Refusal.dc.html ---- #}
+  <section class="panel panel-bad" role="alert">
+    <p class="headline"><span aria-hidden="true">✕</span> {{ r.explain_title }}</p>
+    <p data-testid="answer">{{ r.answer }}</p>
+    <p>{{ r.explain_body }}</p>
+  </section>
+  <section class="card split" style="flex-direction:row;gap:18px" aria-labelledby="dr-h">
+    <div class="stack" style="flex:1 1 420px;min-width:0;gap:8px">
+      <h3 id="dr-h">Drafted SQL (not run)</h3>
+      <pre class="sql" data-testid="draft-sql">{{ r.draft_sql }}</pre>
+    </div>
+    <div class="stack" style="flex:1 1 300px;min-width:0;gap:8px">
+      <h4 style="margin:0;font-size:15px">Guards</h4>
+      <ul class="guards">
+        <li class="g-refused"><span class="g" aria-hidden="true">✕</span><span><strong class="guard-word">Refused:</strong><span class="visually-hidden"> guard result <span data-testid="guard">refused</span>,</span>
+          <code class="guard-code" data-testid="guard-code">{{ r.guard_code }}</code> · <span data-testid="reason">{{ r.reason }}</span></span></li>
+        <li class="g-skip"><span class="g" aria-hidden="true">–</span><span><strong class="guard-word">Not reached:</strong> read-only run and the {{ timeout_s }} s timeout (nothing was sent to the database)</span></li>
+      </ul>
+    </div>
+  </section>
+
+  {% elif r.status == "refused_question" %}
+  {# ---- CantAnswer.dc.html ---- #}
+  <section class="panel panel-info" role="status">
+    <p class="headline"><span aria-hidden="true">◆</span> Can't answer: the data doesn't have this</p>
+    <p data-testid="answer">{{ r.answer }}</p>
+    {% if r.reason %}<p><strong>The model said:</strong> <span data-testid="reason">{{ r.reason }}</span></p>{% endif %}
+    <p>Nothing was drafted and nothing ran. Rollup says so instead of guessing.</p>
+  </section>
+  <section class="card split" style="flex-direction:row;gap:18px" aria-labelledby="cov-h">
+    <div class="stack" style="flex:1 1 420px;min-width:0;gap:8px">
+      <h3 id="cov-h">What the marts do cover</h3>
+      {% if marts %}
+      <ul class="covers">{% for m in marts %}<li><code>{{ m.name }}</code>: {{ m.summary }}</li>{% endfor %}</ul>
+      {% endif %}
+      <a class="inline-link" href="/data">See every column in Data docs</a>
+    </div>
+    <div class="stack" style="flex:1 1 300px;min-width:0;gap:8px">
+      <h4 style="margin:0;font-size:15px">Guards</h4>
+      <ul class="guards"><li class="g-skip"><span class="g" aria-hidden="true">–</span><span><strong class="guard-word">Not reached:</strong><span class="visually-hidden"> guard result <span data-testid="guard">not reached</span>,</span> no SQL was drafted, so there was nothing to check or run.</span></li></ul>
+    </div>
+  </section>
+
+  {% else %}
+  {# ---- States.dc.html: query_error, timeout, model_error ---- #}
+  {% if r.status == "model_error" %}
+  <section class="panel panel-neutral" role="status">
+    <p class="headline"><span aria-hidden="true">◆</span> No draft: the model had nothing for this question</p>
+    <p data-testid="answer">{{ r.answer }}</p>
+    {% if r.reason %}<p><strong>The model said:</strong> <span data-testid="reason">{{ r.reason }}</span></p>{% endif %}
+    {% if recorded %}<p>This build uses recorded model responses (no API key), so only the {{ examples|length }} recorded
+      questions have a draft. <a href="#all-questions">Pick one from the list</a>.</p>{% endif %}
+  </section>
+  {% else %}
+  <section class="panel panel-bad" role="alert">
+    <p class="headline"><span aria-hidden="true">✕</span> {% if r.status == "timeout" %}Stopped: the query ran past the time limit{% else %}Could not run: the database rejected the query{% endif %}</p>
+    <p data-testid="answer">{{ r.answer }}</p>
+    {% if r.reason %}<p><strong>{% if r.status == "timeout" %}Runner said:{% else %}Database said:{% endif %}</strong> <span data-testid="reason">{{ r.reason }}</span></p>{% endif %}
+    <p>{% if r.status == "timeout" %}Try a narrower question (one channel, one quarter).{% else %}The SQL passed the guards, so this is a mistake in the draft (often a column that doesn't exist), not a safety refusal. Nothing was changed.{% endif %}</p>
+  </section>
   {% endif %}
+  {% if r.draft_sql %}
+  <section class="card split" style="flex-direction:row;gap:18px" aria-labelledby="dr-h">
+    <div class="stack" style="flex:1 1 420px;min-width:0;gap:8px">
+      <h3 id="dr-h">Drafted SQL</h3>
+      <pre class="sql" data-testid="draft-sql">{{ r.draft_sql }}</pre>
+    </div>
+    <div class="stack" style="flex:1 1 300px;min-width:0;gap:8px">
+      <h4 style="margin:0;font-size:15px">Guards</h4>
+      <p class="visually-hidden">Guard result: <span data-testid="guard">{{ r.guard }}</span></p>
+      <ul class="guards">
+        <li class="g-pass"><span class="g" aria-hidden="true">✓</span><span><strong class="guard-word">Passed:</strong> the guards checked the draft before it was sent</span></li>
+        <li class="g-refused"><span class="g" aria-hidden="true">✕</span><span><strong class="guard-word">{% if r.status == "timeout" %}Stopped:{% else %}Failed:{% endif %}</strong> {% if r.status == "timeout" %}the {{ timeout_s }} s timeout{% else %}the database could not run it{% endif %}</span></li>
+      </ul>
+    </div>
+  </section>
+  {% else %}
+  <p class="visually-hidden">Guard result: <span data-testid="guard">{{ r.guard }}</span></p>
+  {% endif %}
+  {% endif %}
+</section>
+{% else %}
+{# ---- Start.dc.html: empty state ---- #}
+<section class="card" aria-labelledby="steps-h">
+  <h2 id="steps-h">What happens when you ask</h2>
+  <ol class="steps">
+    <li><strong>A model drafts one SELECT</strong><span>Against the marts only, using their column descriptions. You see the SQL.</span></li>
+    <li><strong>Guards check it in code</strong><span>One SELECT, allowlisted tables, no * on facts, a row cap, read-only, a time limit. A failed check means nothing runs.</span></li>
+    <li><strong>The answer quotes the table</strong><span>Every number in the answer must appear in the result. If it doesn't, the paragraph is replaced.</span></li>
+  </ol>
 </section>
 {% endif %}
