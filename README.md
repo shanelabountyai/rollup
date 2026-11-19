@@ -12,7 +12,9 @@ called by the build (D-29). Spec in `docs/PRD.md`, decisions in `docs/DECISIONS.
 **All data is synthetic**: a seeded generator invents 18 months of a fictional B2B company's ad spend, web
 sessions, form fills and CRM records. No client data, no real company.
 
-![Rollup query UI: drafted SQL, guard result, table, validated answer and line chart](docs/img/ui-answered.png)
+![Rollup Ask page: validated answer with its numbers linked to result cells, table, bar chart, the SQL that ran and the guard checklist (synthetic data)](docs/img/ui-answered.png)
+
+The UI follows the Claude Design artboards in `docs/design/` (design pass, D-51..D-61): **Ask** (`/`), **How accurate is it?** (`/eval`, numbers from the committed run file) and **Data docs** (`/data`, the marts the model can see). `make a11y` runs axe-core against a running `make ui` (local; see `scripts/a11y_check.py`).
 
 ## Case study
 
