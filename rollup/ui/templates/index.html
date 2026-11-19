@@ -36,14 +36,17 @@
   </datalist>
   <details class="all-qs" id="all-questions">
     <summary>All recorded questions ({{ examples|length }}: golden set and refusal set)</summary>
+    {% for g in question_groups %}
+    <h2 class="qgroup">{{ g.title }} <span class="note">({{ g["items"]|length }})</span></h2>
     <ul>
-      {% for ex in examples %}
+      {% for ex in g["items"] %}
       <li><form method="post" action="/ask" hx-post="/ask" hx-target="#result" hx-indicator="#spin">
         <input type="hidden" name="question" value="{{ ex.question }}">
-        <button class="chip" type="submit" title="{{ ex.set }} set">{{ ex.question }}</button>
+        <button class="chip" type="submit">{{ ex.question }} <span class="shows">· {{ ex.set }} set{% if ex.miss %} · eval miss{% endif %}</span></button>
       </form></li>
       {% endfor %}
     </ul>
+    {% endfor %}
   </details>
   {% endif %}
 {% endblock %}

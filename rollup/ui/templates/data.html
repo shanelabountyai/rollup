@@ -22,10 +22,11 @@
       <p class="desc">{{ t.description }}</p>
     </div>
     <div class="tablewrap uncapped" tabindex="0" role="region" aria-label="Columns of {{ t.name }}">
-      <table class="data wrap">
+      <table class="data wrap fixed">
+        <colgroup><col class="c-name"><col class="c-type"><col></colgroup>
         <thead><tr><th scope="col">Column</th><th scope="col">Type</th><th scope="col">Description</th></tr></thead>
         <tbody>
-          {% for c in t.columns %}<tr><td><code>{{ c.name }}</code></td><td>{{ c.data_type or "" }}</td><td>{{ c.description }}</td></tr>{% endfor %}
+          {% for c in t.columns %}<tr><td><code>{{ c.name }}</code></td><td class="type">{{ c.data_type or "" }}</td><td>{{ c.description }}</td></tr>{% endfor %}
         </tbody>
       </table>
     </div>

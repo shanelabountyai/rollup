@@ -40,6 +40,7 @@ from rollup.ui.chart import choose_chart, fmt_cell, is_number, render_svg
 from rollup.ui.views import (
     TIMEOUT_S,
     EvalRow,
+    group_questions,
     guard_explainer,
     highlight_answer,
     load_eval,
@@ -246,6 +247,7 @@ def create_app(
     starter_list = starters()
     eval_path = eval_run_path
     _ev = load_eval(eval_path) if eval_path is not None else load_eval()
+    question_groups = group_questions(examples, _ev if isinstance(the_model, RecordedModel) else None)
     is_recorded = isinstance(the_model, RecordedModel)
     eval_by_question = {row.question: row for row in _ev.rows} if _ev is not None and is_recorded else {}
     ctx_lock = threading.Lock()
@@ -278,6 +280,7 @@ def create_app(
             "model_label": "the recorded model (no API key in this build)" if recorded else f"{the_model.name}",
             "recorded": recorded,
             "examples": examples,
+            "question_groups": question_groups,
             "starters": starter_list,
             "timeout_s": f"{TIMEOUT_S:g}",
             "marts": [],

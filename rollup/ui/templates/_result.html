@@ -136,7 +136,7 @@
   <section class="panel panel-neutral">
     <h3 class="headline"><span aria-hidden="true">◆</span> No draft: the model had nothing for this question</h3>
     <p data-testid="answer">{{ r.answer }}</p>
-    {% if r.reason %}<p><strong>The model said:</strong> <span data-testid="reason">{{ r.reason }}</span></p>{% endif %}
+    {% if r.reason and not recorded %}<p><strong>The model said:</strong> <span data-testid="reason">{{ r.reason }}</span></p>{% endif %}
     {% if recorded %}<p>This build uses recorded model responses (no API key), so only the {{ examples|length }} recorded
       questions have a draft. <a href="#all-questions">Pick one from the list</a>.</p>{% endif %}
   </section>
