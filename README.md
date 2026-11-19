@@ -38,7 +38,7 @@ question ──► model drafts one SELECT          rollup/llm.py (DraftModel: r
         │  context = the 7 marts' schema + column descriptions from the dbt manifest, nothing else
         ▼
 guards (code, not prompt)                     rollup/guards.py, rollup/runner.py
-        │  refuse, with a code and a reason ─────────────────────────────► refusal (no numbers shown)
+        │  refuse, with a code and a reason ─────────────────────────────► refusal (no data numbers)
         ▼
 read-only run, row cap, timeout
         ▼

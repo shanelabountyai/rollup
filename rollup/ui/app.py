@@ -18,13 +18,16 @@ from __future__ import annotations
 
 import json
 import os
+import re
 import threading
+from collections.abc import Awaitable, Callable, Sequence
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
+from urllib.parse import urlsplit
 
 from fastapi import FastAPI, Form, Request
-from fastapi.responses import HTMLResponse, JSONResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, Response
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from markupsafe import Markup
@@ -91,6 +94,32 @@ class ResultView:
     chart_svg: Markup
 
 
+_DIGIT = re.compile(r"\d")
+
+WITHHELD_REASONS = {
+    "refused_question": (
+        "The model said the marts can't answer this; its explanation contained numbers, so it is not shown."
+    ),
+    "query_error": (
+        "The database returned an error; its message contained numbers (it can quote cell values), so it is not shown."
+    ),
+    "timeout": "The query ran past the time limit and was stopped.",
+    "model_error": "The model returned no usable draft; its message contained numbers, so it is not shown.",
+}
+
+
+def shown_reason(status: str, reason: str | None) -> str | None:
+    """The reason text a non-answer page may render (D-47).
+
+    RU-03 checks only the answer. A refusal reason can be free model output (``REFUSE: ...``) and a DuckDB error can
+    quote a cell value, so a reason with any digit is replaced by a fixed message for its status. Guard reasons are
+    kept as written: they come from ``rollup.guards`` and describe the drafted SQL, which the page already shows.
+    """
+    if status == "refused_guard" or reason is None or not _DIGIT.search(reason):
+        return reason
+    return WITHHELD_REASONS.get(status, "The message contained numbers, so it is not shown.")
+
+
 def build_view(r: AskResult) -> ResultView:
     if r.executed_sql:
         guard = "passed"
@@ -111,7 +140,7 @@ def build_view(r: AskResult) -> ResultView:
         draft_sql=r.draft_sql,
         guard=guard,
         guard_code=r.guard_code,
-        reason=r.reason,
+        reason=shown_reason(r.status, r.reason),
         executed_sql=r.executed_sql,
         columns=list(r.columns),
         rows=[[fmt_cell(v) for v in row] for row in r.rows],
@@ -127,11 +156,43 @@ def build_view(r: AskResult) -> ResultView:
     )
 
 
+LOCAL_HOSTS: tuple[str, ...] = ("127.0.0.1", "localhost", "::1")
+
+
+def _hostname(value: str) -> str | None:
+    """Host name of a ``Host`` header value or an origin URL, lower-cased, without port or IPv6 brackets."""
+    netloc = value if "//" in value else f"//{value}"
+    try:
+        host = urlsplit(netloc).hostname
+    except ValueError:
+        return None
+    return host.lower() if host else None
+
+
+def request_refusal(method: str, headers: Any, allowed: Sequence[str]) -> tuple[int, str] | None:
+    """D-50: only local, same-origin requests reach the app (DNS rebinding and cross-site form POSTs).
+
+    ``Host`` must name an allowed host. A POST is refused when the browser marks it cross-site or sends an
+    ``Origin`` (including ``null``) whose host is not allowed. A POST with no ``Origin`` (curl, tests) is allowed.
+    """
+    if _hostname(headers.get("host", "")) not in allowed:
+        return 400, "Host not allowed: this UI only answers on its local address."
+    if method in ("GET", "HEAD", "OPTIONS"):
+        return None
+    if headers.get("sec-fetch-site", "").lower() == "cross-site":
+        return 403, "Cross-site request refused."
+    origin = headers.get("origin")
+    if origin is not None and _hostname(origin) not in allowed:
+        return 403, "Cross-site request refused."
+    return None
+
+
 def create_app(
     model: DraftModel | None = None,
     *,
     db_path: Path | str | None = None,
     manifest_path: Path | str | None = None,
+    allowed_hosts: Sequence[str] = LOCAL_HOSTS,
 ) -> FastAPI:
     the_model = model if model is not None else select_model()
     db = Path(db_path) if db_path is not None else default_db_path()
@@ -147,6 +208,15 @@ def create_app(
             return ctx_cache[0]
 
     app = FastAPI(title="Rollup", docs_url=None, redoc_url=None, openapi_url=None)
+    allowed = tuple(h.lower() for h in allowed_hosts)
+
+    @app.middleware("http")
+    async def local_only(request: Request, call_next: Callable[[Request], Awaitable[Response]]) -> Response:
+        refused = request_refusal(request.method, request.headers, allowed)
+        if refused is not None:
+            return PlainTextResponse(refused[1], status_code=refused[0])
+        return await call_next(request)
+
     app.mount("/static", StaticFiles(directory=str(UI_DIR / "static")), name="static")
 
     def page_context(**extra: Any) -> dict[str, Any]:

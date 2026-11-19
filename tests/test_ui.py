@@ -10,8 +10,9 @@ from __future__ import annotations
 import hashlib
 import html
 import re
-from collections.abc import Iterator
+from collections.abc import Iterator, Sequence
 from pathlib import Path
+from typing import Any
 
 import duckdb
 import pytest
@@ -20,7 +21,7 @@ from fastapi.testclient import TestClient
 import rollup.runner
 from rollup.ask import ask
 from rollup.guards import GuardedQuery, check_sql
-from rollup.llm import ModelUnavailable, RecordedModel
+from rollup.llm import Draft, ModelUnavailable, RecordedModel, parse_draft
 from rollup.runner import open_readonly
 from rollup.schema_context import SchemaContext, load_context
 from rollup.ui.app import create_app, recorded_questions, select_model
@@ -30,6 +31,7 @@ SPEND_BY_PLATFORM = "What was total ad spend by platform?"  # recorded paragraph
 MONTHLY_SPEND = "What was total paid spend each month, in date order?"
 DELETE_Q = "Delete all closed-lost opportunities older than a year."
 NPS_Q = "What is our NPS by customer segment?"
+LOCAL = "http://127.0.0.1:8000"  # the app answers only on loopback hosts (D-50)
 TOP_FIVE = "Which five campaigns have the highest lifetime spend?"  # model paragraph passes RU-03
 
 
@@ -76,14 +78,14 @@ def test_recorded_questions_cover_both_sets() -> None:
 
 
 def test_missing_warehouse_is_a_clear_503(tmp_path: Path) -> None:
-    client = TestClient(create_app(RecordedModel(), db_path=tmp_path / "nope.duckdb"))
+    client = TestClient(create_app(RecordedModel(), db_path=tmp_path / "nope.duckdb"), base_url=LOCAL)
     r = client.post("/ask", data={"question": SPEND_BY_PLATFORM})
     assert r.status_code == 503
     assert "make build" in r.text
 
 
 def test_empty_and_overlong_questions_are_rejected(tmp_path: Path) -> None:
-    client = TestClient(create_app(RecordedModel(), db_path=tmp_path / "nope.duckdb"))
+    client = TestClient(create_app(RecordedModel(), db_path=tmp_path / "nope.duckdb"), base_url=LOCAL)
     assert client.post("/ask", data={"question": "   "}).status_code == 400
     assert client.post("/ask", data={"question": "x" * 501}).status_code == 400
     # htmx only swaps 2xx, so the partial carries the error with a 200
@@ -99,7 +101,7 @@ def client(warehouse_db: Path, repo_root: Path) -> TestClient:
     app = create_app(
         RecordedModel(), db_path=warehouse_db, manifest_path=repo_root / "warehouse" / "target" / "manifest.json"
     )
-    return TestClient(app)
+    return TestClient(app, base_url=LOCAL)
 
 
 @pytest.fixture(scope="module")
@@ -275,3 +277,79 @@ def test_ui_module_runs_no_sql_of_its_own() -> None:
         if isinstance(n, ast.Call)
     }
     assert not calls & {"execute", "executemany", "sql", "query", "run_sql", "execute_guarded", "check_sql"}
+
+
+class _StubModel:
+    """A model whose drafts are fixed per question: stands in for free live-model output (no network)."""
+
+    name = "stub"
+
+    def __init__(self, drafts: dict[str, str]) -> None:
+        self.drafts = drafts
+
+    def draft_sql(self, question: str, context: SchemaContext) -> Draft:
+        return parse_draft(self.drafts[question])
+
+    def write_answer(self, question: str, sql: str, columns: Sequence[str], rows: Sequence[Sequence[Any]]) -> str:
+        return ""
+
+
+@pytest.mark.warehouse
+def test_non_answer_reasons_show_no_numbers(warehouse_db: Path, repo_root: Path) -> None:
+    """D-47: a refusal or error page shows no digits anywhere it renders free text (model refusal, DuckDB error).
+
+    A live model's REFUSE text is free output, and a DuckDB error can quote a cell value; neither is checked by
+    RU-03, so the UI must not render digits from them ("Refusals show no numbers")."""
+    invented = "REFUSE: win rate is 34.5% and spend was $1,234,567"
+    leak = (
+        "```sql\nselect cast(cast(amount_usd as varchar) || 'x' as integer) as v "
+        "from marts.fct_pipeline where is_won\n```"
+    )
+    app = create_app(
+        _StubModel({"q-refuse": invented, "q-error": leak}),
+        db_path=warehouse_db,
+        manifest_path=repo_root / "warehouse" / "target" / "manifest.json",
+    )
+    c = TestClient(app, base_url=LOCAL)
+    for q, status in (("q-refuse", "refused_question"), ("q-error", "query_error")):
+        page = _ask(c, q)
+        assert f'data-status="{status}"' in page, q
+        reason = _text(_tag(page, "reason"))
+        assert reason, q  # the page still says why
+        assert not re.search(r"\d", reason), (q, reason)
+        plain = html.unescape(page)
+        for token in ("34.5", "1,234,567", "Could not convert string"):
+            assert token not in plain, (q, token)
+
+
+# ---- local-only requests: Host and Origin checks (review S-new, D-50) ------------------------------------------
+
+
+def _local_app(tmp_path: Path) -> TestClient:
+    return TestClient(create_app(RecordedModel(), db_path=tmp_path / "nope.duckdb"), base_url=LOCAL)
+
+
+def test_foreign_host_header_is_refused(tmp_path: Path) -> None:
+    """DNS rebinding: a page on evil.example resolving to 127.0.0.1 sends Host: evil.example."""
+    c = _local_app(tmp_path)
+    assert c.get("/healthz").status_code == 200
+    assert c.get("/healthz", headers={"Host": "evil.example"}).status_code == 400
+    r = c.post("/ask", data={"question": "x"}, headers={"Host": "evil.example:8000"})
+    assert r.status_code == 400
+
+
+def test_cross_site_post_is_refused(tmp_path: Path) -> None:
+    """A form on another site can POST to 127.0.0.1 with no preflight; the browser still sends Origin."""
+    c = _local_app(tmp_path)
+    for headers in (
+        {"Origin": "https://evil.example"},
+        {"Origin": "null"},
+        {"Sec-Fetch-Site": "cross-site"},
+    ):
+        r = c.post("/ask", data={"question": SPEND_BY_PLATFORM}, headers=headers)
+        assert r.status_code == 403, headers
+        assert "result" not in r.text.lower() or "data-status" not in r.text
+    # same-origin and no-Origin (curl) posts still reach the handler (503: no warehouse here)
+    assert c.post("/ask", data={"question": "x"}, headers={"Origin": "http://127.0.0.1:8000"}).status_code == 503
+    assert c.post("/ask", data={"question": "x"}, headers={"Origin": "http://localhost:8000"}).status_code == 503
+    assert c.post("/ask", data={"question": "x"}).status_code == 503
