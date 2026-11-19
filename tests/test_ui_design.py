@@ -31,6 +31,7 @@ from rollup.ui.views import (
     EVAL_RUN_FILE,
     GUARD_EXPLAINERS,
     STARTER_IDS,
+    group_questions,
     guard_explainer,
     highlight_answer,
     load_eval,
@@ -64,6 +65,25 @@ def test_highlight_keeps_the_text_and_links_exact_cells() -> None:
     assert 'href="#cell-0-1"' in lit.html and 'href="#cell-1-1"' in lit.html
     # digits inside a word (a campaign id, a quarter) are not marked
     assert "<mark>2001" not in lit.html and ">1</mark>" not in lit.html
+
+
+def test_currency_sign_is_inside_the_mark() -> None:
+    lit = highlight_answer("Spend was $1,500.", ["spend"], [(1500,)])
+    assert "<mark>$1,500</mark>" in lit.html
+    assert _strip(str(lit.html)) == "Spend was $1,500."
+
+
+def test_recorded_questions_are_grouped_by_what_they_show() -> None:
+    """Review UX-4: the list leads with clean answers, not with the validator's replacement."""
+    ev = load_eval()
+    assert ev is not None
+    groups = group_questions(recorded_questions(), ev)
+    assert groups[0]["title"].startswith("Answered: the model's paragraph passed")
+    flat = [i["question"] for g in groups for i in g["items"]]
+    assert sorted(flat) == sorted(q["question"] for q in recorded_questions())  # every question, once
+    misses = {i["question"] for g in groups for i in g["items"] if i["miss"]}
+    assert misses == {r.question for r in ev.rows if r.result == "fail"}
+    assert group_questions(recorded_questions(), None)[0]["title"] == "Recorded questions"
 
 
 def test_highlight_escapes_markup() -> None:
@@ -275,9 +295,9 @@ def test_every_highlight_points_at_a_real_cell(client: TestClient) -> None:
             assert m, (q, cell_id)
             assert 'class="' in m.group(0) and "cited" in m.group(0), (q, cell_id)
             cell = html.unescape(m.group(1)).replace(",", "")
-            tok = token.replace(",", "")
+            tok = token.replace(",", "").removeprefix("$")
             same_number = re.fullmatch(r"-?\d+(\.\d+)?", cell) and Decimal(cell) == Decimal(tok)
-            assert same_number or cell.startswith(token), (q, token, cell)  # equal value, or a date prefix
+            assert same_number or cell.startswith(tok), (q, token, cell)  # equal value, or a date prefix
 
 
 @pytest.mark.warehouse

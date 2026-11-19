@@ -53,15 +53,20 @@ Built from the Claude Design handoff in `docs/design/` (D-51..D-61), on top of `
 - Three independent reviews (design, UX, accessibility); accepted findings fixed (D-61), PRD gained
   "Design, UX and accessibility requirements" DUX-01..DUX-12.
 - Tests: `tests/test_ui_design.py`; `make a11y` (local axe-core + keyboard pass; not in CI, D-56).
-- Left open: the first recorded question shows the fallback paragraph (UX-4); line-chart minimum label can overlap its
-  point; chart is still `role="img"` with the table as its text alternative; fonts are system fonts (D-53).
+- Merged: PR #9 into `phase-4`, then PR #8 into `main` (530d203), 2026-11-19.
+- Follow-up 2026-11-19 (branch `design-followup`, D-62): fixed UX-4 (recorded questions grouped by what they show,
+  misses flagged), the line chart's minimum label, `$` inside the highlight, the eval card label, Data docs column
+  widths, doubled refusal wording, the recorder string on "No draft", and the brand link's 44 px target.
+- Still open: chart is `role="img"` with the table as its text alternative; fonts are system fonts (D-53); six region
+  landmarks on an answered page; the no-JS result URL is `/ask` (a GET route would let another site trigger model
+  calls, D-50, so it stays POST).
 
 Shane's hand steps for the design pass:
 1. Open the Design canvas (https://claude.ai/artifact/XU4VftMnpiQmiDp1i8FABd) and add the four gap artboards if you
    want them there.
 2. `make build && make ui`, look at `/`, `/eval`, `/data`; optionally `npm install --prefix /tmp/axe axe-core@4.10.2`
    and `make a11y AXE=/tmp/axe/node_modules/axe-core/axe.min.js`.
-3. Review the design-pass PR (base `phase-4`, D-51); merge or not.
+3. ~~Review the design-pass PR~~ (merged 2026-11-19). Review the follow-up PR (`design-followup` → `main`); merge or not.
 
 ## What is left / not verified
 

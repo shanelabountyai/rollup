@@ -46,52 +46,52 @@ def starters(path: Path = DEFAULT_RECORDING) -> list[dict[str, str]]:
 GUARD_EXPLAINERS: dict[str, tuple[str, str]] = {
     "not_select": (
         "Not run: Rollup only reads data",
-        "The drafted SQL was not a plain SELECT: it would change or manage data. Rollup runs a single SELECT on a "
-        "read-only connection, so nothing was changed and nothing ran. Ask the reporting question on its own.",
+        "The draft would change or manage data, and Rollup only runs a single SELECT on a read-only connection. "
+        "To see the same records, ask for a report on them instead (for example, which opportunities are closed-lost).",
     ),
     "multiple_statements": (
         "Not run: one query at a time",
-        "The drafted SQL held more than one statement. Rollup runs exactly one SELECT, so nothing ran. "
+        "The draft held more than one statement, and Rollup runs exactly one SELECT. "
         "Try asking for one result at a time.",
     ),
     "table_not_allowed": (
         "Not run: that table is off limits",
-        "The drafted SQL read a table outside the marts. Questions may read only the marts listed in Data docs "
-        "(not staging, intermediate or system tables), so nothing ran.",
+        "The draft read a table outside the marts. Questions may read only the marts listed in Data docs, not staging, "
+        "intermediate or system tables.",
     ),
     "table_function": (
         "Not run: no reading files or table functions",
-        "The drafted SQL tried to read data through a table function (for example a file reader) instead of a mart. "
-        "Only the marts can be read, so nothing ran.",
+        "The draft tried to read data through a table function (for example a file reader) instead of a mart. "
+        "Only the marts can be read.",
     ),
     "function_not_allowed": (
         "Not run: that function is blocked",
-        "The drafted SQL called a system or file function that is not allowed, so nothing ran.",
+        "The draft called a system or file function that is not allowed.",
     ),
     "star_on_fact_table": (
         "Not run: name the columns you need",
-        "The drafted SQL used SELECT * on a fact table. Fact tables must be read column by column, so nothing ran. "
+        "The draft used SELECT * on a fact table, and fact tables must be read column by column. "
         "Ask for the specific fields you want.",
     ),
     "bad_limit": (
         "Not run: the row limit was not a plain number",
-        "The drafted SQL used a LIMIT the guards can't cap safely, so nothing ran.",
+        "The draft used a LIMIT the guards can't cap safely.",
     ),
     "parse_error": (
         "Not run: the SQL could not be parsed",
-        "The drafted SQL is not valid SQL for this warehouse, so the guards could not check it and nothing ran.",
+        "The draft is not valid SQL for this warehouse, so the guards could not check it.",
     ),
     "unresolvable": (
         "Not run: the tables could not be resolved",
-        "The guards could not work out which tables the drafted SQL reads, so nothing ran.",
+        "The guards could not work out which tables the draft reads.",
     ),
-    "empty": ("Not run: the draft was empty", "The model returned no SQL to check, so nothing ran."),
+    "empty": ("Not run: the draft was empty", "The model returned no SQL to check."),
     "too_long": (
         "Not run: the draft was too long",
-        "The drafted SQL was longer than the guards accept, so nothing ran.",
+        "The draft was longer than the guards accept.",
     ),
 }
-_GENERIC_GUARD = ("Not run: a safety check said no", "The drafted SQL failed a guard, so nothing ran.")
+_GENERIC_GUARD = ("Not run: a safety check said no", "The draft failed a guard.")
 
 
 def guard_explainer(code: str | None) -> tuple[str, str]:
@@ -178,6 +178,8 @@ def highlight_answer(answer: str, columns: Sequence[str], rows: Sequence[Sequenc
         start, end = m.start(1), m.start(1) + len(token)
         if not token:
             continue
+        sign = "$" if start > pos and answer[start - 1] == "$" else ""  # mark the currency sign with its number
+        start -= len(sign)
         parts.append(str(escape(answer[pos:start])))
         cell = next(
             ((i, j) for i, row in enumerate(rows) for j, v in enumerate(row) if _cell_matches(token, v)),
@@ -185,7 +187,8 @@ def highlight_answer(answer: str, columns: Sequence[str], rows: Sequence[Sequenc
         )
         if cell is None:
             parts.append(
-                f'<mark class="cite" title="Checked against the result at the precision written">{escape(token)}</mark>'
+                '<mark class="cite" title="Checked against the result at the precision written">'
+                f"{escape(sign + token)}</mark>"
             )
         else:
             i, j = cell
@@ -193,7 +196,7 @@ def highlight_answer(answer: str, columns: Sequence[str], rows: Sequence[Sequenc
             col = columns[j] if j < len(columns) else ""
             parts.append(
                 f'<a class="cite" href="#cell-{i}-{j}" title="Row {i + 1}, {escape(col)}">'
-                f"<mark>{escape(token)}</mark></a>"
+                f"<mark>{escape(sign + token)}</mark></a>"
             )
         pos = end
     parts.append(str(escape(answer[pos:])))
@@ -220,6 +223,8 @@ class EvalRow:
     outcome: str
     result: str  # "pass", "fail" or "refused"
     result_label: str
+    status: str = ""
+    answer_source: str = ""  # "model" or "fallback" for answered items
 
 
 @dataclass
@@ -261,7 +266,18 @@ def load_eval(path: Path = EVAL_RUN_FILE) -> EvalView | None:
             n = "R" + (qid.split("_", 1)[0].lstrip("r").lstrip("0") or "0")
             ok = bool(item.get("correct"))
             result, label = ("refused", "Correctly refused") if ok else ("fail", "Fail: showed numbers")
-        rows.append(EvalRow(n, str(item["question"]), str(item["set"]), outcome, result, label))
+        rows.append(
+            EvalRow(
+                n,
+                str(item["question"]),
+                str(item["set"]),
+                outcome,
+                result,
+                label,
+                status=status,
+                answer_source=str(item.get("answer_source") or ""),
+            )
+        )
     try:
         source = str(path.relative_to(REPO_ROOT))
     except ValueError:
@@ -278,6 +294,46 @@ def load_eval(path: Path = EVAL_RUN_FILE) -> EvalView | None:
         rejected_ru03=int(s["model_paragraphs_rejected_ru03"]),
         rows=rows,
     )
+
+
+# Groups for "All recorded questions" (review UX-4): what each recorded question shows, from the committed run.
+QUESTION_GROUPS: tuple[tuple[str, str], ...] = (
+    ("model", "Answered: the model's paragraph passed RU-03"),
+    ("fallback", "Answered: the validator replaced the model's paragraph"),
+    ("refused_guard", "Refused by a guard"),
+    ("refused_question", "The data can't answer"),
+    ("error", "The database rejected the SQL, or no usable draft"),
+)
+
+
+def _group_key(row: EvalRow) -> str:
+    if row.status == "answered":
+        return "fallback" if row.answer_source == "fallback" else "model"
+    if row.status in ("refused_guard", "refused_question"):
+        return row.status
+    return "error"
+
+
+def group_questions(examples: Sequence[dict[str, str]], ev: EvalView | None) -> list[dict[str, Any]]:
+    """The recorded questions grouped by what they show, in recording order inside each group.
+
+    Without a run file the list is one group in recording order. A question the run scores as a miss is flagged.
+    """
+    if ev is None:
+        return [{"title": "Recorded questions", "items": [dict(e, miss=False) for e in examples]}] if examples else []
+    by_q = {r.question: r for r in ev.rows}
+    groups: dict[str, list[dict[str, Any]]] = {k: [] for k, _ in QUESTION_GROUPS}
+    other: list[dict[str, Any]] = []
+    for e in examples:
+        row = by_q.get(e["question"])
+        if row is None:
+            other.append(dict(e, miss=False))
+            continue
+        groups[_group_key(row)].append(dict(e, miss=row.result == "fail"))
+    out = [{"title": title, "items": groups[k]} for k, title in QUESTION_GROUPS if groups[k]]
+    if other:
+        out.append({"title": "Other recorded questions", "items": other})
+    return out
 
 
 # ---- data docs (DataDocs.dc.html) ------------------------------------------------------------------------

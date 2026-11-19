@@ -5,7 +5,7 @@ SQL, see whether the safety checks passed, get the table, a chart, and an answer
 result.
 
 Build-log #27. Status: **Phase 4 merged** (PR #6, 2026-11-18): FastAPI + HTMX query UI, shape-based charts and
-this case study. All four PRD phases are on `main` (generator, dbt models, guards, guarded runner, model interface, RU-03
+this case study; review follow-up (PR #8) and the design pass (PR #9) merged 2026-11-19. All four PRD phases are on `main` (generator, dbt models, guards, guarded runner, model interface, RU-03
 validator, golden-set eval, UI). Everything in CI runs on **recorded** model responses; no live LLM is
 called by the build (D-29). Spec in `docs/PRD.md`, decisions in `docs/DECISIONS.md`, what's next in `NEXT.md`.
 

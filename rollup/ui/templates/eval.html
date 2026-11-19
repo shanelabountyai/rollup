@@ -20,7 +20,7 @@
     <div class="stat"><span class="k">Passed</span><span class="v" data-testid="eval-golden">{{ ev.golden_equivalent }} of {{ ev.golden_total }}</span><span class="s">Golden questions, result-set equivalent</span></div>
     <div class="stat"><span class="k">Refusal set</span><span class="v" data-testid="eval-refusal">{{ ev.refusal_correct }} of {{ ev.refusal_total }}</span><span class="s">Showed no numbers, as they should</span></div>
     <div class="stat"><span class="k">Invariant failures</span><span class="v" data-testid="eval-invariants">{{ ev.invariant_failures }}</span><span class="s">Refused SQL that ran, or a shown number not in its result. DB file unchanged: {{ "yes" if ev.db_unchanged else "no" }}</span></div>
-    <div class="stat"><span class="k">Answers with an untraceable number</span><span class="v" data-testid="eval-ru03">{{ ev.rejected_ru03 }}</span><span class="s">Caught by the validator before display; the table-quoting fallback was shown</span></div>
+    <div class="stat"><span class="k">Untraceable numbers caught</span><span class="v" data-testid="eval-ru03">{{ ev.rejected_ru03 }}</span><span class="s">Answers whose paragraph had a number not in the result; the validator replaced them before display</span></div>
   </div>
   <section class="card flush" aria-labelledby="qs">
     <div class="card-head">

@@ -169,7 +169,7 @@ def _bar_svg(spec: ChartSpec) -> str:
 
 
 def _line_svg(spec: ChartSpec) -> str:
-    height, pad_x, top, bottom = 230, 16, 24, 40
+    height, pad_x, top, bottom = 246, 16, 24, 58
     plot_w, plot_h = WIDTH - 2 * pad_x, height - top - bottom
     lo, hi = min(spec.values), max(spec.values)
     span = (hi - lo) or 1.0
@@ -183,13 +183,17 @@ def _line_svg(spec: ChartSpec) -> str:
             f"<title>{escape(label)}: {escape(vlabel)}</title></circle>"
         )
     # Label the first and last dates, and the highest and lowest points, with their own cells.
-    parts.append(_text(pts[0][0], height - 14, spec.labels[0]))
-    parts.append(_text(pts[-1][0], height - 14, spec.labels[-1], anchor="end"))
+    parts.append(_text(pts[0][0], height - 8, spec.labels[0]))
+    parts.append(_text(pts[-1][0], height - 8, spec.labels[-1], anchor="end"))
     i_hi, i_lo = spec.values.index(hi), spec.values.index(lo)
-    for i in dict.fromkeys((i_hi, i_lo)):  # both sit just above their point; one label if they coincide
+    for i in dict.fromkeys((i_hi, i_lo)):  # one label if they coincide
         x, y = pts[i]
-        anchor = "start" if i == 0 else ("end" if i == n - 1 else "middle")
-        parts.append(_text(x, y - 8, spec.value_labels[i], anchor=anchor, cls="val"))
+        if i == i_hi:  # the highest point: label just above it
+            anchor = "start" if i == 0 else ("end" if i == n - 1 else "middle")
+            parts.append(_text(x, y - 8, spec.value_labels[i], anchor=anchor, cls="val"))
+        else:  # the lowest point sits on the baseline: label it below, between the baseline and the dates
+            anchor = "start" if i == 0 else ("end" if i == n - 1 else "middle")
+            parts.append(_text(x, y + 20, spec.value_labels[i], anchor=anchor, cls="val"))
     return _svg(spec, height, parts)
 
 
