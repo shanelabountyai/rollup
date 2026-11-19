@@ -1,0 +1,9 @@
+{% if r.eval and r.eval.result == "fail" %}
+<div class="replaced" data-testid="eval-note"><span class="g" aria-hidden="true">✕</span><span><strong>Known eval miss:</strong>
+  in the committed eval run this recorded draft {{ "gave a result that does not match the reference answer" if r.eval.set == "golden" else "showed numbers for a question the data can't answer" }}.
+  Passing the guards and RU-03 means the SQL was safe and the answer quotes its result, not that the SQL answers the
+  question. <a href="/eval">See the eval</a>.</span></div>
+{% elif r.eval %}
+<p class="note" data-testid="eval-note"><span aria-hidden="true">✓</span> In the committed eval run this recorded question
+  {{ "matched the reference answer" if r.eval.result == "pass" else "was correctly refused" }} (<a href="/eval">eval</a>).</p>
+{% endif %}

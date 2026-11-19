@@ -1,10 +1,10 @@
 {% extends "base.html" %}
 {% block title %}{% if result %}{{ result.status_label }} · {% endif %}Ask Rollup{% endblock %}
 {% block main %}
-  <form class="ask" method="post" action="/ask" hx-post="/ask" hx-target="#result" hx-indicator="#spin">
+  <form class="ask" method="post" action="/ask" hx-post="/ask" hx-target="#result" hx-indicator="#spin" hx-disabled-elt="find button">
     <h1 class="ask-title"><label for="q">Ask a question about marketing performance</label></h1>
     <div class="row">
-      <input id="q" type="text" name="question" value="{{ question }}" list="recorded-questions" maxlength="500"
+      <input id="q" type="text" name="question" value="{{ question }}" list="recorded-questions"
              placeholder="e.g. {{ starters[0].question if starters else 'What was total ad spend by platform?' }}"
              autocomplete="off" required{% if error %} aria-invalid="true" aria-describedby="q-error"{% endif %}>
       <button class="btn" type="submit">Ask</button>
@@ -28,7 +28,7 @@
   </div>
   {% endif %}
 
-  <div id="result" aria-live="polite">{% include "_result.html" %}</div>
+  <div id="result">{% include "_result.html" %}</div>
 
   {% if examples %}
   <datalist id="recorded-questions">
@@ -54,7 +54,20 @@ document.body.addEventListener("htmx:afterSwap", function (e) {
   if (e.detail && e.detail.target && e.detail.target.id === "result") {
     var h = document.getElementById("result-heading");
     if (h) { h.focus({ preventScroll: false }); }
+    var q = document.getElementById("q"), err = document.getElementById("q-error");
+    if (q) {
+      if (err) { q.setAttribute("aria-invalid", "true"); q.setAttribute("aria-describedby", "q-error"); }
+      else { q.removeAttribute("aria-invalid"); q.removeAttribute("aria-describedby"); }
+    }
+    var sec = document.querySelector("#result [data-title]");
+    document.title = sec ? sec.getAttribute("data-title") : "Ask Rollup";
   }
+});
+/* "Pick one from the list" opens the recorded-questions list and moves focus to it. */
+document.addEventListener("click", function (e) {
+  var a = e.target.closest && e.target.closest('a[href="#all-questions"]');
+  var d = document.getElementById("all-questions");
+  if (a && d) { e.preventDefault(); d.open = true; d.querySelector("summary").focus(); d.scrollIntoView(); }
 });
 </script>
 {% endblock %}

@@ -7,8 +7,8 @@
       The model is given exactly this, and the guards refuse any other table. All data is synthetic.</p>
   </div>
   {% if ctx is none %}
-  <section class="panel panel-bad" role="alert" data-testid="error">
-    <p class="headline"><span aria-hidden="true">✕</span> The warehouse is not built yet</p>
+  <section class="panel panel-bad" data-testid="error">
+    <h2 class="headline"><span aria-hidden="true">✕</span> The warehouse is not built yet</h2>
     <p>Run <code>make build</code>, then reload.</p>
   </section>
   {% else %}

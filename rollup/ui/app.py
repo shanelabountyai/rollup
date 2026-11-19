@@ -39,6 +39,7 @@ from rollup.schema_context import SchemaContext, load_context
 from rollup.ui.chart import choose_chart, fmt_cell, is_number, render_svg
 from rollup.ui.views import (
     TIMEOUT_S,
+    EvalRow,
     guard_explainer,
     highlight_answer,
     load_eval,
@@ -110,6 +111,8 @@ class ResultView:
     chart_title: str = ""
     explain_title: str = ""  # plain-words headline for a guard refusal
     explain_body: str = ""
+    touch_note: bool = False  # the result involves first/last-touch credit: say which is primary (owner call, D-20)
+    eval: EvalRow | None = None  # this question's row in the committed eval run, if it is a recorded question
 
 
 _DIGIT = re.compile(r"\d")
@@ -192,6 +195,8 @@ def build_view(r: AskResult) -> ResultView:
         chart_title=chart_title,
         explain_title=explain_title,
         explain_body=explain_body,
+        touch_note=r.answered
+        and ("touch" in (r.executed_sql or "").lower() or any("touch" in c.lower() for c in r.columns)),
     )
 
 
@@ -240,6 +245,9 @@ def create_app(
     examples = recorded_questions() if isinstance(the_model, RecordedModel) else []
     starter_list = starters()
     eval_path = eval_run_path
+    _ev = load_eval(eval_path) if eval_path is not None else load_eval()
+    is_recorded = isinstance(the_model, RecordedModel)
+    eval_by_question = {row.question: row for row in _ev.rows} if _ev is not None and is_recorded else {}
     ctx_lock = threading.Lock()
     ctx_cache: list[SchemaContext] = []
 
@@ -326,6 +334,7 @@ def create_app(
                     result = build_view(ask(q, the_model, con, ctx))
                 finally:
                     con.close()
+                result.eval = eval_by_question.get(q)
                 if result.status == "refused_question":
                     marts = marts_summary(ctx)
         # htmx does not swap 4xx/5xx responses by default, so a partial carries its error with a 200.

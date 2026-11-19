@@ -8,8 +8,8 @@
       wording sounds right. A question from the second set passes only if no number is shown.</p>
   </div>
   {% if ev is none %}
-  <section class="panel panel-neutral" role="status" data-testid="eval-missing">
-    <p class="headline"><span aria-hidden="true">◆</span> No committed run file</p>
+  <section class="panel panel-neutral" data-testid="eval-missing">
+    <h2 class="headline"><span aria-hidden="true">◆</span> No committed run file</h2>
     <p>The eval page reads <code>docs/eval/recorded-run.json</code>, which is not in this checkout. Run <code>make eval</code> to produce a run.</p>
   </section>
   {% else %}

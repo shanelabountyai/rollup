@@ -193,7 +193,10 @@ def test_page_structure_without_warehouse(tmp_path: Path) -> None:
     _structure_ok(c.get("/data").text, "/data")
     err = c.post("/ask", data={"question": "   "}).text
     _structure_ok(err, "/")
-    assert 'role="alert"' in err and 'aria-invalid="true"' in err and 'aria-describedby="q-error"' in err
+    assert 'id="q-error"' in err and 'aria-invalid="true"' in err and 'aria-describedby="q-error"' in err
+    # one announcement per result: no live region around the result (focus moves to its heading instead)
+    assert "aria-live" not in c.get("/").text
+    assert "maxlength" not in c.get("/").text  # over-long input reaches the server's message, not a silent cut
 
 
 def test_no_ui_module_runs_sql_of_its_own() -> None:
@@ -266,7 +269,9 @@ def test_every_highlight_points_at_a_real_cell(client: TestClient) -> None:
         if 'data-status="answered"' not in page:
             continue
         for cell_id, token in re.findall(r'<a class="cite" href="#(cell-\d+-\d+)"[^>]*><mark>([^<]+)</mark></a>', page):
-            m = re.search(rf'<td id="{cell_id}"[^>]*>([^<]*)</td>', page)
+            m = re.search(
+                rf'<td id="{cell_id}"[^>]*>([^<]*)<span class="visually-hidden"> \(quoted in the answer\)', page
+            )
             assert m, (q, cell_id)
             assert 'class="' in m.group(0) and "cited" in m.group(0), (q, cell_id)
             cell = html.unescape(m.group(1)).replace(",", "")
@@ -278,10 +283,14 @@ def test_every_highlight_points_at_a_real_cell(client: TestClient) -> None:
 @pytest.mark.warehouse
 def test_refusal_pages_say_it_in_words_glyphs_and_colour(client: TestClient) -> None:
     guard = _ask(client, "Delete all closed-lost opportunities older than a year.")
-    assert 'class="panel panel-bad" role="alert"' in guard
-    assert "✕" in guard and "Not run: Rollup only reads data" in guard
+    assert '<section class="panel panel-bad">' in guard
+    assert re.search(
+        r'<h3 class="headline"><span aria-hidden="true">✕</span> Not run: Rollup only reads data</h3>', guard
+    )
     cant = _ask(client, "What is our NPS by customer segment?")
-    assert 'class="panel panel-info"' in cant and "◆" in cant and "Can't answer" in cant
+    assert 'class="panel panel-info"' in cant and re.search(
+        r'<h3 class="headline"><span aria-hidden="true">◆</span> Can', cant
+    )
     for name in MART_TABLES:
         assert f"<code>{name}</code>" in cant
     none = _ask(client, "Which coupon code drove the most signups?")
@@ -314,3 +323,28 @@ def test_hostile_text_is_escaped_everywhere(warehouse_db: Path, repo_root: Path)
             page = _ask(c, q, htmx=htmx)
             assert "<img" not in page, (q, htmx)
             assert "&lt;img" in page, (q, htmx)  # shown, escaped
+
+
+@pytest.mark.warehouse
+def test_known_eval_misses_are_flagged_on_the_ask_page(client: TestClient) -> None:
+    """UX review must-fix: a recorded draft the eval marks wrong must not look like a trusted answer (DUX-05)."""
+    ev = load_eval()
+    assert ev is not None
+    for row in ev.rows:
+        page = _ask(client, row.question)
+        note = _tag(page, "eval-note")
+        assert note is not None, row.question
+        if row.result == "fail":
+            assert "Known eval miss" in note and 'href="/eval"' in note, row.question
+        else:
+            assert "Known eval miss" not in note, row.question
+    churn = _ask(client, "What is our customer churn rate?")
+    assert 'data-status="answered"' in churn and "Known eval miss" in churn
+
+
+@pytest.mark.warehouse
+def test_attribution_note_on_touch_results(client: TestClient) -> None:
+    page = _ask(client, "How many deals did each channel win under first-touch versus last-touch credit?")
+    assert 'data-status="answered"' in page and 'data-testid="attribution"' in page
+    spend = _ask(client, "Which five campaigns have the highest lifetime spend?")
+    assert 'data-testid="attribution"' not in spend

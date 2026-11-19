@@ -122,7 +122,7 @@ def passed_checks(executed_sql: str | None, elapsed_ms: float | None) -> list[st
         "one SELECT statement, parsed",
         f"only allowlisted marts{tables}",
         "no SELECT * on a fact table",
-        f"row limit added ({DEFAULT_MAX_ROWS:,})",
+        f"row cap of {DEFAULT_MAX_ROWS:,} rows (the outer LIMIT asks for one more row to detect a cut)",
         "read-only connection",
         timing,
     ]
