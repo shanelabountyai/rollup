@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Ask Rollup — start</title>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&amp;family=Space+Grotesk:wght@600;700&amp;display=swap">
+<style>
+body{margin:0;background:#F7F7F4}
+a{color:#0F5E63}a:hover{color:#0A4347}
+</style>
+</helmet>
+<div style="min-height: 100%; background: #F7F7F4; color: #16181D; font-family: Inter, system-ui, sans-serif; font-size: 15px; line-height: 1.5;">
+<header style="background: #FFFFFF; border-bottom: 1px solid #D9D9D2;">
+<div style="max-width: 1120px; margin: 0 auto; padding: 12px 24px; display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center;">
+<span style="display: flex; align-items: baseline; gap: 10px;"><span style="font-family: 'Space Grotesk', sans-serif; font-weight: 700; font-size: 18px;">Rollup</span><span style="font-size: 13px; color: #565B66;">Synthetic B2B company · 18 months of data</span></span>
+<nav aria-label="Main" style="display: flex; gap: 18px; font-size: 14px;"><a href="#" aria-current="page" style="font-weight: 600; color: #16181D; text-decoration: none; border-bottom: 2px solid #0F5E63; padding: 12px 0;">Ask</a><a href="Eval.dc.html" style="color: #3E434D; text-decoration: none; padding: 12px 0;">How accurate is it? (eval)</a><a href="DataDocs.dc.html" style="color: #3E434D; text-decoration: none; padding: 12px 0;">Data docs</a></nav>
+</div>
+</header>
+<main style="max-width: 1120px; margin: 0 auto; padding: 24px 24px 56px; display: flex; flex-direction: column; gap: 18px;">
+
+<form style="display: flex; flex-direction: column; gap: 10px;">
+<label for="q" style="font-family: 'Space Grotesk', sans-serif; font-size: 22px; font-weight: 700;">Ask a question about marketing performance</label>
+<div style="display: flex; flex-wrap: wrap; gap: 10px;">
+<input id="q" type="text" placeholder="e.g. [a recorded question]" style="flex: 1 1 480px; min-height: 52px; box-sizing: border-box; border: 1px solid #8A8F99; border-radius: 10px; padding: 0 14px; font: inherit; font-size: 17px; background: #FFFFFF;">
+<button type="button" style="min-height: 52px; padding: 0 22px; border-radius: 10px; border: none; background: #0F5E63; color: #FFFFFF; font: inherit; font-weight: 600;">Ask</button>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: 14px;"><span style="color: #565B66;">Try:</span>
+<sc-for list="{{starters}}" as="s" hint-placeholder-count="4"><button type="button" style="min-height: 44px; padding: 0 12px; border-radius: 999px; border: 1px solid #8A8F99; background: #FFFFFF; color: #0F5E63; font: inherit; font-size: 14px; text-align: left;">{{s.q}} <span style="color: #565B66;">· {{s.shows}}</span></button></sc-for>
+</div>
+<p style="margin: 0; font-size: 13px; color: #3E434D;"><span style="font-weight: 600; border: 1px dashed #8A8F99; border-radius: 6px; padding: 1px 8px;">Model: recorded (offline, no API key)</span> Only the [N] recorded questions have a draft. Anything else ends in "No usable draft".</p>
+</form>
+
+<section aria-labelledby="how" style="background: #FFFFFF; border: 1px solid #D9D9D2; border-radius: 14px; padding: 20px; display: flex; flex-direction: column; gap: 12px;">
+<h2 id="how" style="margin: 0; font-size: 17px;">What happens when you ask</h2>
+<ol style="margin: 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px;">
+<li style="border: 1px solid #E4E4DE; border-radius: 10px; padding: 12px 14px;"><strong style="display: block;">A model drafts one SELECT</strong><span style="color: #3E434D; font-size: 14px;">Against the marts only, using their column descriptions. You see the SQL.</span></li>
+<li style="border: 1px solid #E4E4DE; border-radius: 10px; padding: 12px 14px;"><strong style="display: block;">Guards check it in code</strong><span style="color: #3E434D; font-size: 14px;">One SELECT, allowlisted tables, no * on facts, a row cap, read-only, a time limit. A failed check means nothing runs.</span></li>
+<li style="border: 1px solid #E4E4DE; border-radius: 10px; padding: 12px 14px;"><strong style="display: block;">The answer quotes the table</strong><span style="color: #3E434D; font-size: 14px;">Every number in the answer must appear in the result. If it doesn't, the paragraph is replaced.</span></li>
+</ol>
+</section>
+
+<details style="background: #FFFFFF; border: 1px solid #D9D9D2; border-radius: 14px; padding: 0 20px;">
+<summary style="min-height: 44px; display: flex; align-items: center; font-weight: 600; cursor: pointer;">All recorded questions ([N]: golden set and refusal set)</summary>
+<ul style="margin: 0 0 16px; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 8px;">
+<sc-for list="{{all}}" as="q" hint-placeholder-count="6"><li><button type="button" style="min-height: 44px; padding: 0 12px; border-radius: 8px; border: 1px solid #D9D9D2; background: #FFFFFF; color: #0F5E63; font: inherit; font-size: 14px; text-align: left;">{{q}}</button></li></sc-for>
+</ul>
+</details>
+</main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1280,"height":900}}'>
+class Component extends DCLogic {
+  renderVals() {
+    // Placeholders only: the app fills these from rollup/eval/recorded.json.
+    const starters = [
+      { q: '[recorded question: an answered one]', shows: 'answer + bar chart' },
+      { q: '[recorded question: monthly]', shows: 'line chart' },
+      { q: '[recorded question: a write request]', shows: 'a guard refusal' },
+      { q: '[recorded question: not in the data]', shows: "the data can't answer" }
+    ];
+    const all = ['[recorded question]', '[recorded question]', '[recorded question]', '[recorded question]', '[recorded question]', '[recorded question]'];
+    return { starters, all };
+  }
+}
+</script>
+</body>
+</html>
